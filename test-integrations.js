@@ -1,7 +1,6 @@
-// Test script for Stripe and Twilio integrations
+// Test script for Stripe integration
 require('dotenv').config();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const twilio = require('twilio');
 
 async function testStripe() {
   console.log('🧪 Testing Stripe integration...');
@@ -32,37 +31,18 @@ async function testStripe() {
   }
 }
 
-async function testTwilio() {
-  console.log('🧪 Testing Twilio integration...');
+async function testEmail() {
+  console.log('🧪 Testing Email configuration...');
   
-  if (!process.env.TWILIO_SID || !process.env.TWILIO_TOKEN) {
-    console.log('❌ Twilio credentials not found in environment variables');
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.log('❌ Email credentials not found in environment variables');
+    console.log('   Set EMAIL_USER and EMAIL_PASS to enable email notifications');
     return false;
   }
   
-  try {
-    const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_TOKEN);
-    
-    // Test sending a SMS (only if phone numbers are configured)
-    if (process.env.TWILIO_FROM && process.env.TWILIO_TO) {
-      const message = await client.messages.create({
-        from: process.env.TWILIO_FROM,
-        to: process.env.TWILIO_TO,
-        body: 'Flawless Finish integration test - SMS working! 📱'
-      });
-      
-      console.log('✅ Twilio SMS sent successfully');
-      console.log(`   Message SID: ${message.sid}`);
-      return true;
-    } else {
-      console.log('⚠️  Twilio credentials found but phone numbers not configured');
-      console.log('   Set TWILIO_FROM and TWILIO_TO to test SMS functionality');
-      return true;
-    }
-  } catch (error) {
-    console.log('❌ Twilio test failed:', error.message);
-    return false;
-  }
+  console.log('✅ Email credentials found');
+  console.log(`   Email: ${process.env.EMAIL_USER}`);
+  return true;
 }
 
 async function runTests() {
@@ -70,13 +50,13 @@ async function runTests() {
   
   const stripeResult = await testStripe();
   console.log('');
-  const twilioResult = await testTwilio();
+  const emailResult = await testEmail();
   
   console.log('\n📊 Test Results:');
   console.log(`   Stripe: ${stripeResult ? '✅ PASS' : '❌ FAIL'}`);
-  console.log(`   Twilio: ${twilioResult ? '✅ PASS' : '❌ FAIL'}`);
+  console.log(`   Email: ${emailResult ? '✅ PASS' : '❌ FAIL'}`);
   
-  if (stripeResult && twilioResult) {
+  if (stripeResult && emailResult) {
     console.log('\n🎉 All integrations working! Ready for production.');
   } else {
     console.log('\n⚠️  Some integrations need configuration. Check your .env file.');
@@ -88,5 +68,4 @@ if (require.main === module) {
   runTests().catch(console.error);
 }
 
-module.exports = { testStripe, testTwilio, runTests };
-
+module.exports = { testStripe, testEmail, runTests };
