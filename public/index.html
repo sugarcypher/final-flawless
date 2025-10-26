@@ -4,12 +4,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Flawless Finish Ceramic Coating – Palm Springs & Coachella Valley</title>
-  <meta name="description" content="Premium automotive ceramic coating with transparent pricing, real-time calendar booking with $250 deposit (demo), and meticulous multi-stage prep for desert conditions." />
+  <meta name="description" content="Premium automotive ceramic coating with transparent pricing, real-time calendar booking with $250 deposit, and meticulous multi-stage prep for desert conditions." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="css/booking.css" />
   
   <!-- Favicon -->
   <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
@@ -17,7 +16,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
   <link rel="icon" type="image/png" href="images/favicon.png">
 </head>
-<body class="dark">
+<body>
   <header class="hero">
     <div class="wrap">
       <div>
@@ -29,7 +28,7 @@
         <div class="badges">
           <span class="badge">Owner: Jason (Jay)</span>
           <span class="badge">Call: 442‑342‑3627</span>
-          <span class="badge">Deposit: $250 (demo)</span>
+          <span class="badge">Deposit: $250</span>
           <span class="badge">Mobile & Shop Service</span>
         </div>
         <div class="cta-row">
@@ -80,6 +79,14 @@
             <img src="images/gallery/bmw-interior-dashboard.jpg" alt="BMW M interior with ceramic coating on dashboard">
             <div class="gallery-caption">Interior Dashboard Protection</div>
           </div>
+          <div class="gallery-item">
+            <img src="images/before-after/before.png" alt="Vehicle before ceramic coating treatment">
+            <div class="gallery-caption">Before Treatment</div>
+          </div>
+          <div class="gallery-item">
+            <img src="images/before-after/after.png" alt="Vehicle after ceramic coating treatment - flawless finish">
+            <div class="gallery-caption">After Treatment</div>
+          </div>
         </div>
         <div class="gallery-cta">
           <a href="#booking" class="button primary">Book Your Ceramic Coating</a>
@@ -115,7 +122,6 @@
             </div>
             <div class="before-after-caption">Headlight Restoration & Ceramic Coating</div>
           </div>
-                  <div class="before-after-item">
           <div class="before-after-item">
             <div class="before-after-image">
               <img src="images/before-after/before.png" alt="Vehicle before ceramic coating treatment">
@@ -127,6 +133,7 @@
             </div>
             <div class="before-after-caption">Complete Vehicle Transformation</div>
           </div>
+        </div>
         <div class="before-after-cta">
           <a href="#booking" class="button primary">Transform Your Vehicle</a>
           <a href="tel:4423423627" class="button secondary">Call (442) 342-3627</a>
@@ -180,17 +187,17 @@
         <p class="sub">Proof beats promises — what drivers say after living with the coating.</p>
         <div class="testi-grid">
           <div class="testi">
-            <h3>“Desert dust just won’t stick.”</h3>
-            <p>Six months later and rinses take minutes. The water beading hasn’t quit.</p>
+            <h3>"Desert dust just won't stick."</h3>
+            <p>Six months later and rinses take minutes. The water beading hasn't quit.</p>
             <div class="by">— M., Indio</div>
           </div>
           <div class="testi">
-            <h3>“Looks better than delivery day.”</h3>
+            <h3>"Looks better than delivery day."</h3>
             <p>Paint correction + 5‑year coating. It turns heads in the sun.</p>
             <div class="by">— A., Palm Springs</div>
           </div>
           <div class="testi">
-            <h3>“Professional, punctual, meticulous.”</h3>
+            <h3>"Professional, punctual, meticulous."</h3>
             <p>Explained each step. Zero surprises. Booking my SUV next.</p>
             <div class="by">— J.R., La Quinta</div>
           </div>
@@ -198,169 +205,381 @@
       </div>
     </section>
 
-    <section class="section dark reviews-section">
-      <div class="container">
-        <h2>Share Your Experience</h2>
-        <p class="sub">Help others discover the Flawless Finish difference</p>
-        <div class="reviews-content">
-          <div class="reviews-form">
-            <h3>Leave a Review</h3>
-            <form id="reviewForm" class="review-form">
-              <div class="form-group">
-                <label for="customerName">Your Name</label>
-                <input type="text" id="customerName" name="name" required>
-              </div>
-              <div class="form-group">
-                <label for="customerLocation">Location (City)</label>
-                <input type="text" id="customerLocation" name="location" required>
-              </div>
-              <div class="form-group">
-                <label for="reviewText">Your Review</label>
-                <textarea id="reviewText" name="review" rows="4" required placeholder="Tell us about your experience..."></textarea>
-              </div>
-              <div class="form-group">
-                <label for="rating">Rating</label>
-                <select id="rating" name="rating" required>
-                  <option value="">Select Rating</option>
-                  <option value="5">⭐⭐⭐⭐⭐ Excellent</option>
-                  <option value="4">⭐⭐⭐⭐ Very Good</option>
-                  <option value="3">⭐⭐⭐ Good</option>
-                  <option value="2">⭐⭐ Fair</option>
-                  <option value="1">⭐ Poor</option>
-                </select>
-              </div>
-              <button type="submit" class="button primary">Submit Review</button>
-            </form>
-          </div>
-          <div class="recent-reviews">
-            <h3>Recent Reviews</h3>
-            <div id="recentReviews" class="reviews-list">
-              <!-- Reviews will be dynamically added here -->
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section light email-signup">
-      <div class="container">
-        <div class="signup-content">
-          <div class="signup-text">
-            <h2>Stay Updated</h2>
-            <p class="lead">Get exclusive offers, seasonal specials, and ceramic coating tips delivered to your inbox.</p>
-            <ul class="signup-benefits">
-              <li>🎯 Exclusive member discounts</li>
-              <li>📅 Early access to booking slots</li>
-              <li>💡 Pro maintenance tips</li>
-              <li>🎉 Special event announcements</li>
-            </ul>
-          </div>
-          <div class="signup-form">
-            <form id="emailSignup" class="email-form">
-              <div class="form-group">
-                <input type="email" id="email" name="email" placeholder="Enter your email address" required>
-                <button type="submit" class="button cta">Subscribe</button>
-              </div>
-              <p class="privacy-note">We respect your privacy. Unsubscribe at any time.</p>
-            </form>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="pricing" class="section light pricing">
+    <section id="pricing" class="section light pricing-section">
       <div class="container">
         <h2>Transparent Pricing</h2>
-        <p class="sub">Final quotes vary by condition and correction needs. $250 deposit applies to your total.</p>
-        <div class="tiers">
-          <div class="tier">
-            <h3>2‑Year Coating</h3>
-            <div class="price">$800–$1,100</div>
+        <p class="sub">Add $100 to each menu item for ceramic coating</p>
+        <div class="pricing-grid">
+          <div class="pricing-card">
+            <h3>Cars</h3>
+            <div class="price">$700</div>
+            <div class="description">Minimal Paint Correction</div>
             <ul>
-              <li>Wash · iron removal · clay</li>
-              <li>Single‑stage polish</li>
-              <li>Body coating (1 layer)</li>
+              <li>Decontamination wash</li>
+              <li>Clay bar treatment</li>
+              <li>Light polish</li>
+              <li>2-year ceramic coating</li>
             </ul>
+            <a href="#booking" class="button primary">Book This Service</a>
           </div>
-          <div class="tier featured">
-            <h3>3–4 Year Coating <span style="font-size:12px;color:#7b5600">· Most Popular</span></h3>
-            <div class="price">$1,100–$1,500</div>
+          <div class="pricing-card featured">
+            <h3>Cars</h3>
+            <div class="price">$800</div>
+            <div class="description">Moderate Paint Correction</div>
             <ul>
-              <li>Full decon · paint correction</li>
-              <li>2‑layer body coating</li>
-              <li>Aftercare guidance</li>
+              <li>Full decontamination</li>
+              <li>Clay bar treatment</li>
+              <li>Multi-stage polish</li>
+              <li>3-year ceramic coating</li>
             </ul>
+            <a href="#booking" class="button primary">Book This Service</a>
           </div>
-          <div class="tier">
-            <h3>5‑Year Coating</h3>
-            <div class="price">$1,500–$2,100</div>
+          <div class="pricing-card">
+            <h3>Cars</h3>
+            <div class="price">$1,000</div>
+            <div class="description">Heavy Paint Correction</div>
             <ul>
-              <li>Multi‑stage correction</li>
-              <li>2–3 layers + topper</li>
-              <li>Aftercare kit included</li>
+              <li>Complete decontamination</li>
+              <li>Clay bar treatment</li>
+              <li>Heavy compounding & polish</li>
+              <li>5-year ceramic coating</li>
             </ul>
+            <a href="#booking" class="button primary">Book This Service</a>
           </div>
         </div>
-
-        <div class="tiers" style="margin-top:14px">
-          <div class="tier"><h3>Glass Coating (all)</h3><div class="price">$150–$250</div></div>
-          <div class="tier"><h3>Wheels & Calipers</h3><div class="price">$200–$400</div></div>
-          <div class="tier"><h3>Interior Ceramic</h3><div class="price">$200–$350</div></div>
+        <div class="pricing-note">
+          <p><strong>Trucks/SUVs:</strong> Add $100 to each price above</p>
+          <p><strong>Glass & Rims:</strong> Add $100-$150 depending on correction level</p>
         </div>
       </div>
     </section>
 
-    <section class="section light process">
+    <section class="section light process-section">
       <div class="container">
-        <h2>The Process</h2>
-        <p class="sub">Measured, documented, repeatable — every time.</p>
-        <div class="steps">
-          <div class="step"><div class="icon">1</div><div>Inspection & paint‑depth readings</div></div>
-          <div class="step"><div class="icon">2</div><div>Contactless wash · iron remover · clay bar</div></div>
-          <div class="step"><div class="icon">3</div><div>Paint correction (single or multi‑stage)</div></div>
-          <div class="step"><div class="icon">4</div><div>IPA panel wipe · ceramic application</div></div>
-          <div class="step"><div class="icon">5</div><div>Cure · final QA · aftercare briefing</div></div>
+        <h2>Our Process</h2>
+        <p class="sub">Meticulous preparation for lasting results</p>
+        <div class="process-grid">
+          <div class="process-step">
+            <div class="step-number">1</div>
+            <h3>Initial Inspection</h3>
+            <p>Walk-around assessment with Jason and vehicle owner to identify scratches, swirl marks, oxidation, and contamination that need attention.</p>
+          </div>
+          <div class="process-step">
+            <div class="step-number">2</div>
+            <h3>Decontamination</h3>
+            <p>Pre-wash and thorough decontamination using pH-neutral shampoo and iron removers to strip away old waxes, sealants, and embedded contaminants.</p>
+          </div>
+          <div class="process-step">
+            <div class="step-number">3</div>
+            <h3>Clay Bar Treatment</h3>
+            <p>Clay bar used to remove any remaining bonded debris, leaving the surface smooth and ready for paint correction.</p>
+          </div>
+          <div class="process-step">
+            <div class="step-number">4</div>
+            <h3>Paint Correction</h3>
+            <p>High-speed buffing/compounding to eliminate deeper imperfections and polishing to enhance gloss and remove swirl marks.</p>
+          </div>
+          <div class="process-step">
+            <div class="step-number">5</div>
+            <h3>Final Preparation</h3>
+            <p>Final inspection under bright lighting and IPA solution wipe to remove any remaining oils or residues before coating application.</p>
+          </div>
+          <div class="process-step">
+            <div class="step-number">6</div>
+            <h3>Ceramic Coating</h3>
+            <p>Ceramic coating applied one panel at a time. Once fully cured (7 days), you'll only need water to rinse and dry!</p>
+          </div>
         </div>
       </div>
     </section>
 
-    <section id="booking" class="section light booking">
+    <section id="booking" class="booking-section">
       <div class="container">
-        <h2>Book in a Calendar View</h2>
-        <p class="sub">Pick a time that works. The <strong>$250 deposit</strong> secures your appointment (demo only, no real payment).</p>
-        <div id="calendar" class="calendar"></div>
-        <div class="notice" id="nextSlot"></div>
-        <div class="cta-row" style="margin-top:12px">
-          <button id="depositBtn" class="button primary" disabled>Pay $250 Deposit (Demo)</button>
-          <a href="tel:14423423627" class="button secondary">Call Jason (Jay)</a>
+        <div class="booking-container">
+          <h2>Book Your Ceramic Coating</h2>
+          <p class="sub">Select your preferred date and complete your booking</p>
+          
+          <div class="calendar-container">
+            <h3>Available Dates</h3>
+            <div class="calendar-grid" id="calendar">
+              <!-- Calendar will be populated by JavaScript -->
+            </div>
+            <div id="nextSlot" class="text-center mb-20"></div>
+          </div>
+
+          <form class="booking-form" id="bookingForm">
+            <div class="form-group">
+              <label for="customerName">Full Name</label>
+              <input type="text" id="customerName" name="customerName" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="customerPhone">Phone Number</label>
+              <input type="tel" id="customerPhone" name="customerPhone" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="vehicleType">Vehicle Type</label>
+              <select id="vehicleType" name="vehicleType" required>
+                <option value="">Select Vehicle Type</option>
+                <option value="car">Car</option>
+                <option value="truck">Truck</option>
+                <option value="suv">SUV</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="serviceLevel">Service Level</label>
+              <select id="serviceLevel" name="serviceLevel" required>
+                <option value="">Select Service Level</option>
+                <option value="minimal">Minimal Paint Correction - $700</option>
+                <option value="moderate">Moderate Paint Correction - $800</option>
+                <option value="heavy">Heavy Paint Correction - $1,000</option>
+              </select>
+            </div>
+
+            <div class="payment-section">
+              <h3>Payment Options</h3>
+              <div class="payment-options">
+                <button type="button" id="cashBooking" class="button secondary">Book with Cash Payment</button>
+                <button type="button" id="cardBooking" class="button primary">Pay $250 Deposit</button>
+              </div>
+              
+              <div id="paymentForm" style="display: none;">
+                <div id="payment-element">
+                  <!-- Stripe Elements will be inserted here -->
+                </div>
+                <button type="submit" id="submit-payment" class="button primary">Pay $250 Deposit</button>
+              </div>
+            </div>
+          </form>
         </div>
-        <div class="toast" id="toast"></div>
       </div>
     </section>
-
-    <section class="section light">
-      <div class="container card">
-        <h2>Contact</h2>
-        <p>Owner: <strong>Jason (Jay)</strong> · <a href="tel:14423423627">442‑342‑3627</a> · <a href="mailto:j@flawlessfini.sh">j@flawlessfini.sh</a></p>
-        <p class="sub">Serving Palm Springs & Coachella Valley with premium ceramic coating services.</p>
-      </div>
-    </section>
-
-    <footer class="light">
-      <div class="container footer">
-        <div>© 2025 Flawless Finish Ceramic Coating</div>
-        <div><a href="privacy.html">Privacy</a> · <a href="security.html">Security</a></div>
-      </div>
-    </footer>
   </main>
 
-  <!-- Lightbox Modal -->
-  <div id="lightbox" class="lightbox">
-    <img id="lightbox-img" src="" alt="">
-    <div id="lightbox-caption" class="lightbox-caption"></div>
-  </div>
+  <footer class="section dark">
+    <div class="container">
+      <div class="text-center">
+        <h3>Flawless Finish Ceramic Coating</h3>
+        <p>Palm Springs & Coachella Valley</p>
+        <p>Call: <a href="tel:4423423627" style="color: #007bff;">(442) 342-3627</a></p>
+        <p>Owner: Jason (Jay)</p>
+      </div>
+    </div>
+  </footer>
 
-  <script src="scripts.js"></script>
-  <script src="js/booking.js"></script>
+  <script>
+    // Professional booking calendar functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      const calendar = document.getElementById('calendar');
+      const nextSlot = document.getElementById('nextSlot');
+      const cashBooking = document.getElementById('cashBooking');
+      const cardBooking = document.getElementById('cardBooking');
+      const paymentForm = document.getElementById('paymentForm');
+      const bookingForm = document.getElementById('bookingForm');
+      
+      let selectedDate = null;
+      let stripe = null;
+      
+      // Load calendar from API
+      async function loadCalendar() {
+        try {
+          const response = await fetch('/api/availability?days=30');
+          const data = await response.json();
+          
+          calendar.innerHTML = '';
+          let firstAvailable = null;
+          
+          data.days.forEach(day => {
+            const dayElement = document.createElement('div');
+            dayElement.className = 'calendar-day';
+            dayElement.textContent = day.displayDate;
+            dayElement.setAttribute('data-date', day.date);
+            
+            if (day.booked) {
+              dayElement.classList.add('booked');
+              dayElement.textContent += ' (Booked)';
+            } else {
+              if (!firstAvailable) {
+                firstAvailable = day;
+              }
+              dayElement.addEventListener('click', function() {
+                selectDate(day.date);
+              });
+            }
+            
+            calendar.appendChild(dayElement);
+          });
+          
+          if (firstAvailable) {
+            nextSlot.textContent = `Next available: ${firstAvailable.displayDate}`;
+          } else {
+            nextSlot.textContent = 'No available dates in the next 30 days';
+          }
+        } catch (error) {
+          console.error('Error loading calendar:', error);
+          nextSlot.textContent = 'Error loading calendar. Please refresh the page.';
+        }
+      }
+      
+      // Select date function
+      function selectDate(date) {
+        selectedDate = date;
+        document.querySelectorAll('.calendar-day').forEach(day => {
+          day.classList.remove('selected');
+        });
+        const selectedElement = document.querySelector(`[data-date="${date}"]`);
+        if (selectedElement) {
+          selectedElement.classList.add('selected');
+        }
+      }
+      
+      // Cash booking handler
+      cashBooking.addEventListener('click', async function() {
+        if (!validateForm()) return;
+        
+        try {
+          const formData = {
+            date: selectedDate,
+            name: document.getElementById('customerName').value,
+            phone: document.getElementById('customerPhone').value,
+            vehicleType: document.getElementById('vehicleType').value,
+            serviceLevel: document.getElementById('serviceLevel').value,
+            paymentMethod: 'cash'
+          };
+          
+          const response = await fetch('/api/book-cash', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            alert('Cash booking submitted successfully! We will contact you to confirm your appointment.');
+            bookingForm.reset();
+            selectedDate = null;
+            document.querySelectorAll('.calendar-day').forEach(day => {
+              day.classList.remove('selected');
+            });
+          } else {
+            alert('Booking failed: ' + (result.message || 'Unknown error'));
+          }
+        } catch (error) {
+          console.error('Booking error:', error);
+          alert('Network error. Please try again.');
+        }
+      });
+      
+      // Card booking handler
+      cardBooking.addEventListener('click', async function() {
+        if (!validateForm()) return;
+        
+        try {
+          // Initialize Stripe
+          if (!window.Stripe) {
+            const script = document.createElement('script');
+            script.src = 'https://js.stripe.com/v3/';
+            document.head.appendChild(script);
+            await new Promise(resolve => script.onload = resolve);
+          }
+          
+          // Get Stripe publishable key
+          const keyResponse = await fetch('/api/stripe-key');
+          const { publishableKey } = await keyResponse.json();
+          
+          if (!publishableKey) {
+            alert('Payment system not configured. Please contact us directly.');
+            return;
+          }
+          
+          stripe = Stripe(publishableKey);
+          
+          // Create payment intent
+          const formData = {
+            date: selectedDate,
+            name: document.getElementById('customerName').value,
+            phone: document.getElementById('customerPhone').value,
+            vehicleType: document.getElementById('vehicleType').value,
+            serviceLevel: document.getElementById('serviceLevel').value
+          };
+          
+          const response = await fetch('/api/create-payment-intent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            // Initialize Stripe Elements
+            const elements = stripe.elements({
+              clientSecret: result.clientSecret
+            });
+            
+            const paymentElement = elements.create('payment');
+            paymentElement.mount('#payment-element');
+            
+            paymentForm.style.display = 'block';
+            
+            // Handle form submission
+            bookingForm.addEventListener('submit', async function(e) {
+              e.preventDefault();
+              
+              const { error } = await stripe.confirmPayment({
+                elements,
+                confirmParams: {
+                  return_url: window.location.href
+                }
+              });
+              
+              if (error) {
+                alert('Payment failed: ' + error.message);
+              } else {
+                alert('Payment successful! Your booking has been confirmed.');
+                bookingForm.reset();
+                paymentForm.style.display = 'none';
+                selectedDate = null;
+                document.querySelectorAll('.calendar-day').forEach(day => {
+                  day.classList.remove('selected');
+                });
+              }
+            });
+          } else {
+            alert('Payment setup failed: ' + (result.message || 'Unknown error'));
+          }
+        } catch (error) {
+          console.error('Payment error:', error);
+          alert('Payment system error. Please try again or contact us directly.');
+        }
+      });
+      
+      // Form validation
+      function validateForm() {
+        const name = document.getElementById('customerName').value;
+        const phone = document.getElementById('customerPhone').value;
+        const vehicleType = document.getElementById('vehicleType').value;
+        const serviceLevel = document.getElementById('serviceLevel').value;
+        
+        if (!name || !phone || !vehicleType || !serviceLevel) {
+          alert('Please fill in all required fields.');
+          return false;
+        }
+        
+        if (!selectedDate) {
+          alert('Please select a date for your appointment.');
+          return false;
+        }
+        
+        return true;
+      }
+      
+      // Initialize calendar
+      loadCalendar();
+    });
+  </script>
 </body>
 </html>
