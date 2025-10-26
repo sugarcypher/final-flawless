@@ -95,6 +95,50 @@
             <img src="images/gallery/70DB7259-DC31-4EC2-913D-F8A373EBDB38_1_105_c.jpeg" alt="Ceramic coating application">
             <div class="gallery-caption">Expert Application</div>
           </div>
+          <div class="gallery-item">
+            <img src="images/gallery/70FDC29D-56A6-47A8-AFC5-DB2F69BCA841_1_105_c.jpeg" alt="Ceramic coating transformation">
+            <div class="gallery-caption">Complete Transformation</div>
+          </div>
+          <div class="gallery-item">
+            <img src="images/gallery/749F8F04-9A69-4A87-9429-C1BBA9335E7F_1_105_c.jpeg" alt="Professional detailing work">
+            <div class="gallery-caption">Professional Detailing</div>
+          </div>
+          <div class="gallery-item">
+            <img src="images/gallery/7D953D53-8255-4D6E-9C69-62585AB09E28_1_105_c.jpeg" alt="Ceramic coating finish">
+            <div class="gallery-caption">Flawless Finish</div>
+          </div>
+          <div class="gallery-item">
+            <img src="images/gallery/9F36238E-7005-43C1-AD72-0206771E5AE0_1_105_c.jpeg" alt="High-end ceramic coating">
+            <div class="gallery-caption">High-End Protection</div>
+          </div>
+          <div class="gallery-item">
+            <img src="images/gallery/9F871EEB-B45D-4866-BD38-628EEA5F68D8_1_105_c.jpeg" alt="Ceramic coating results">
+            <div class="gallery-caption">Premium Results</div>
+          </div>
+          <div class="gallery-item">
+            <img src="images/gallery/A382230E-5034-4041-86B3-4A7AE10DF928.jpeg" alt="Professional ceramic work">
+            <div class="gallery-caption">Professional Work</div>
+          </div>
+          <div class="gallery-item">
+            <img src="images/gallery/B2040A7B-381B-493E-81E0-1F86560EB65A.jpeg" alt="Ceramic coating application">
+            <div class="gallery-caption">Expert Application</div>
+          </div>
+          <div class="gallery-item">
+            <img src="images/gallery/C00CD066-53A0-4AA6-A96A-202C53EF3D05_1_105_c.jpeg" alt="Ceramic coating detail">
+            <div class="gallery-caption">Attention to Detail</div>
+          </div>
+          <div class="gallery-item">
+            <img src="images/gallery/CE0C9E15-4FDA-4ED7-BF37-8FDBA44F23EA.jpeg" alt="Ceramic coating finish">
+            <div class="gallery-caption">Perfect Finish</div>
+          </div>
+          <div class="gallery-item">
+            <img src="images/gallery/ED593E8B-486F-46CA-BC83-8B06226C1B83_1_105_c.jpeg" alt="Ceramic coating transformation">
+            <div class="gallery-caption">Amazing Transformation</div>
+          </div>
+          <div class="gallery-item">
+            <img src="images/gallery/FE9424FB-2A65-478A-8774-F4A98D9E4BF0.jpeg" alt="Ceramic coating results">
+            <div class="gallery-caption">Outstanding Results</div>
+          </div>
         </div>
         <div class="gallery-cta">
           <a href="#booking" class="button primary">Book Your Ceramic Coating</a>
@@ -301,6 +345,7 @@
             <div class="calendar-grid" id="calendar">
               <!-- Calendar will be populated by JavaScript -->
             </div>
+            <div id="selectedDate" class="selected-date-display"></div>
             <div id="nextSlot" class="text-center mb-20"></div>
           </div>
 
@@ -386,49 +431,93 @@
           const data = await response.json();
           
           calendar.innerHTML = '';
+          
+          // Create month header
+          const today = new Date();
+          const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                            'July', 'August', 'September', 'October', 'November', 'December'];
+          
+          const monthHeader = document.createElement('div');
+          monthHeader.className = 'calendar-month';
+          monthHeader.innerHTML = `<h4>${monthNames[today.getMonth()]} ${today.getFullYear()}</h4>`;
+          calendar.appendChild(monthHeader);
+          
+          // Create day headers
+          const dayHeaders = document.createElement('div');
+          dayHeaders.className = 'calendar-day-headers';
+          dayHeaders.innerHTML = `
+            <div class="day-header">Mon</div>
+            <div class="day-header">Tue</div>
+            <div class="day-header">Wed</div>
+            <div class="day-header">Thu</div>
+            <div class="day-header">Fri</div>
+            <div class="day-header">Sat</div>
+          `;
+          calendar.appendChild(dayHeaders);
+          
+          // Create calendar grid
+          const calendarGrid = document.createElement('div');
+          calendarGrid.className = 'calendar-days';
+          
           let firstAvailable = null;
           
-          data.days.forEach(day => {
-            const dayElement = document.createElement('div');
-            dayElement.className = 'calendar-day';
-            dayElement.textContent = day.displayDate;
-            dayElement.setAttribute('data-date', day.date);
+          // Generate next 30 days
+          for (let i = 1; i <= 30; i++) {
+            const date = new Date(today);
+            date.setDate(today.getDate() + i);
             
-            if (day.booked) {
-              dayElement.classList.add('booked');
-              dayElement.textContent += ' (Booked)';
-            } else {
+            // Skip Sundays (day 0)
+            if (date.getDay() !== 0) {
+              const dateStr = date.toISOString().split('T')[0];
+              const dayElement = document.createElement('div');
+              dayElement.className = 'calendar-day available';
+              dayElement.textContent = date.getDate();
+              dayElement.setAttribute('data-date', dateStr);
+              dayElement.style.cursor = 'pointer';
+              
               if (!firstAvailable) {
-                firstAvailable = day;
+                firstAvailable = { date: dateStr, displayDate: date.toLocaleDateString() };
               }
+              
               dayElement.addEventListener('click', function() {
-                selectDate(day.date);
+                selectDate(dateStr, dayElement);
               });
+              
+              calendarGrid.appendChild(dayElement);
             }
-            
-            calendar.appendChild(dayElement);
-          });
+          }
+          
+          calendar.appendChild(calendarGrid);
           
           if (firstAvailable) {
-            nextSlot.textContent = `Next available: ${firstAvailable.displayDate}`;
+            nextSlot.innerHTML = `<p><strong>Next Available:</strong> ${firstAvailable.displayDate}</p>`;
           } else {
-            nextSlot.textContent = 'No available dates in the next 30 days';
+            nextSlot.innerHTML = '<p>No available dates in the next 30 days</p>';
           }
         } catch (error) {
           console.error('Error loading calendar:', error);
-          nextSlot.textContent = 'Error loading calendar. Please refresh the page.';
+          nextSlot.innerHTML = '<p>Error loading calendar. Please refresh the page.</p>';
         }
       }
       
       // Select date function
-      function selectDate(date) {
+      function selectDate(date, element) {
         selectedDate = date;
+        
+        // Remove selected class from all days
         document.querySelectorAll('.calendar-day').forEach(day => {
           day.classList.remove('selected');
         });
-        const selectedElement = document.querySelector(`[data-date="${date}"]`);
-        if (selectedElement) {
-          selectedElement.classList.add('selected');
+        
+        // Add selected class to clicked day
+        if (element) {
+          element.classList.add('selected');
+        }
+        
+        // Show selected date
+        const selectedDateDisplay = document.getElementById('selectedDate');
+        if (selectedDateDisplay) {
+          selectedDateDisplay.textContent = `Selected: ${new Date(date).toLocaleDateString()}`;
         }
       }
       
