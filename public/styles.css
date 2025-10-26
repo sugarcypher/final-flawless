@@ -622,3 +622,73 @@ footer a:hover {
 .mt-40 {
   margin-top: 40px;
 }
+
+/* Process Section */
+.process-section {
+    background-color: var(--color-light);
+    color: var(--color-text-dark);
+    text-align: center;
+}
+
+body.dark .process-section {
+    background-color: #222;
+    color: var(--color-text-light);
+}
+
+.process-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 3rem;
+}
+
+.process-step {
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+body.dark .process-step {
+    background-color: #333;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.process-step:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+.step-number {
+    display: inline-block;
+    width: 50px;
+    height: 50px;
+    background-color: var(--color-primary);
+    color: #fff;
+    border-radius: 50%;
+    line-height: 50px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.process-step h3 {
+    color: var(--color-dark);
+    margin-bottom: 0.5rem;
+    font-size: 1.4rem;
+}
+
+body.dark .process-step h3 {
+    color: var(--color-light);
+}
+
+.process-step p {
+    color: var(--color-secondary);
+    line-height: 1.6;
+}
+
+body.dark .process-step p {
+    color: #bbb;
+}
