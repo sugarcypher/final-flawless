@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Flawless Finish Ceramic Coating – Palm Springs & Coachella Valley</title>
+  <meta name="description" content="Premium automotive ceramic coating with transparent pricing, real-time calendar booking with $250 deposit (demo), and meticulous multi-stage prep for desert conditions." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="css/booking.css" />
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="images/favicon.png">
+</head>
+<body class="dark">
+  <header class="hero">
+    <div class="wrap">
+      <div>
+        <div class="logo-section">
+          <img src="images/flawless-finish-logo.png" alt="Flawless Finish Ceramic Coating Logo" class="logo">
+        </div>
+        <h1>Flawless Finish Ceramic Coating</h1>
+        <p class="lead">Desert‑luxe ceramic protection for Palm Springs & Coachella Valley — UV, heat, and sand defense with mirror‑grade gloss.</p>
+        <div class="badges">
+          <span class="badge">Owner: Jason (Jay)</span>
+          <span class="badge">Call: 442‑342‑3627</span>
+          <span class="badge">Deposit: $250 (demo)</span>
+          <span class="badge">Mobile & Shop Service</span>
+        </div>
+        <div class="cta-row">
+          <a href="#booking" class="button primary">Book Now</a>
+          <a href="#pricing" class="button secondary">See Pricing</a>
+        </div>
+      </div>
+      <div class="card dark">
+        <h2 style="margin-top:0">What You Get</h2>
+        <p class="sub">Engineered process for harsh desert conditions.</p>
+        <ul>
+          <li>Decontamination, clay, polish, panel wipe</li>
+          <li>2–5 year ceramic options</li>
+          <li>Hydrophobic, UV & oxidation resistant</li>
+          <li>Glass & wheel coating add‑ons</li>
+        </ul>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="section light gallery-section">
+      <div class="container">
+        <h2>Ceramic Gallery</h2>
+        <p class="sub">Premium ceramic coating results from Palm Springs & Coachella Valley</p>
+        <div class="gallery">
+          <div class="gallery-item">
+            <img src="images/gallery/bmw-m5-water-droplets.jpg" alt="BMW M5 freshly ceramic coated - dark grey finish with water beading">
+            <div class="gallery-caption">BMW M5 - Water Beading Effect</div>
+          </div>
+          <div class="gallery-item">
+            <img src="images/gallery/bmw-light-blue-mirror.jpg" alt="BMW with mirror-like ceramic coating finish">
+            <div class="gallery-caption">BMW - Mirror-Like Finish</div>
+          </div>
+          <div class="gallery-item">
+            <img src="images/gallery/bmw-interior-red-leather.jpg" alt="BMW M interior with red leather and ceramic protection">
+            <div class="gallery-caption">Interior Ceramic Protection - Red Leather</div>
+          </div>
+          <div class="gallery-item">
+            <img src="images/gallery/acura-restored-headlight.jpg" alt="Acura with restored headlight and ceramic coating">
+            <div class="gallery-caption">Headlight Restoration & Protection</div>
+          </div>
+          <div class="gallery-item">
+            <img src="images/gallery/bmw-soap-washing.jpg" alt="BMW being washed with soap suds during prep process">
+            <div class="gallery-caption">Professional Prep Process</div>
+          </div>
+          <div class="gallery-item">
+            <img src="images/gallery/bmw-interior-dashboard.jpg" alt="BMW M interior with ceramic coating on dashboard">
+            <div class="gallery-caption">Interior Dashboard Protection</div>
+          </div>
+        </div>
+        <div class="gallery-cta">
+          <a href="#booking" class="button primary">Book Your Ceramic Coating</a>
+          <a href="#pricing" class="button secondary">View Pricing</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section dark before-after-section">
+      <div class="container">
+        <h2>Before & After Gallery</h2>
+        <p class="sub">See the transformation - from damaged to flawless</p>
+        <div class="before-after-gallery">
+          <div class="before-after-item">
+            <div class="before-after-image">
+              <img src="images/before-after/paint-swirls-before.jpg" alt="Paint with swirl marks and scratches - before">
+              <div class="before-after-label">Before</div>
+            </div>
+            <div class="before-after-image">
+              <img src="images/before-after/paint-mirror-finish-after.jpg" alt="Perfect mirror finish after ceramic coating - after">
+              <div class="before-after-label">After</div>
+            </div>
+            <div class="before-after-caption">Paint Correction & Ceramic Coating</div>
+          </div>
+          <div class="before-after-item">
+            <div class="before-after-image">
+              <img src="images/before-after/headlight-oxidized-before.jpg" alt="Acura with severely oxidized, hazy headlight - before">
+              <div class="before-after-label">Before</div>
+            </div>
+            <div class="before-after-image">
+              <img src="images/before-after/headlight-restored-after.jpg" alt="Acura with crystal clear, restored headlight and ceramic coating - after">
+              <div class="before-after-label">After</div>
+            </div>
+            <div class="before-after-caption">Headlight Restoration & Ceramic Coating</div>
+          </div>
+                  <div class="before-after-item">
+          <div class="before-after-item">
+            <div class="before-after-image">
+              <img src="images/before-after/before.png" alt="Vehicle before ceramic coating treatment">
+              <div class="before-after-label">Before</div>
+            </div>
+            <div class="before-after-image">
+              <img src="images/before-after/after.png" alt="Vehicle after ceramic coating treatment - flawless finish">
+              <div class="before-after-label">After</div>
+            </div>
+            <div class="before-after-caption">Complete Vehicle Transformation</div>
+          </div>
+        <div class="before-after-cta">
+          <a href="#booking" class="button primary">Transform Your Vehicle</a>
+          <a href="tel:4423423627" class="button secondary">Call (442) 342-3627</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section about-me">
+      <div class="container">
+        <div class="about-content">
+          <div class="about-text">
+            <h2>About Me</h2>
+            <p class="lead">Upgrading Great to Excellence</p>
+            <p>Hi, I'm Jason — the owner and operator of Flawless Finish Ceramic Coating here in sunny Palm Springs. My passion for cars started early. I began high-speed buffing at just 15 years old, and for the past <strong>28 years</strong> I've been perfecting my craft — restoring shine, depth, and protection to vehicles of all kinds.</p>
+            
+            <p>Originally from the Midwest, I bring those Indiana values of hard work, fairness, and loyalty into everything I do. At Flawless Finish, my focus is simple: deliver superior results and make every vehicle look better than new.</p>
+            
+            <p>For me, detailing isn't just about appearance — it's about pride, precision, and helping people fall in love with their cars all over again.</p>
+            
+            <p class="highlight">When you choose Flawless Finish Ceramic Coating, you're not just getting a service — you're getting a commitment to excellence.</p>
+            
+            <div class="credentials">
+              <div class="credential">
+                <span class="number">28</span>
+                <span class="label">Years Experience</span>
+              </div>
+              <div class="credential">
+                <span class="number">15</span>
+                <span class="label">Started Age</span>
+              </div>
+              <div class="credential">
+                <span class="number">∞</span>
+                <span class="label">Cars Restored</span>
+              </div>
+            </div>
+          </div>
+          <div class="about-image">
+            <img src="images/jason-headshot.jpg" alt="Jason - Owner of Flawless Finish Ceramic Coating" />
+            <div class="image-caption">
+              <strong>Jason</strong><br>
+              Owner & Master Detailer
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section testimonials">
+      <div class="container">
+        <h2>Clients in the Valley</h2>
+        <p class="sub">Proof beats promises — what drivers say after living with the coating.</p>
+        <div class="testi-grid">
+          <div class="testi">
+            <h3>“Desert dust just won’t stick.”</h3>
+            <p>Six months later and rinses take minutes. The water beading hasn’t quit.</p>
+            <div class="by">— M., Indio</div>
+          </div>
+          <div class="testi">
+            <h3>“Looks better than delivery day.”</h3>
+            <p>Paint correction + 5‑year coating. It turns heads in the sun.</p>
+            <div class="by">— A., Palm Springs</div>
+          </div>
+          <div class="testi">
+            <h3>“Professional, punctual, meticulous.”</h3>
+            <p>Explained each step. Zero surprises. Booking my SUV next.</p>
+            <div class="by">— J.R., La Quinta</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section dark reviews-section">
+      <div class="container">
+        <h2>Share Your Experience</h2>
+        <p class="sub">Help others discover the Flawless Finish difference</p>
+        <div class="reviews-content">
+          <div class="reviews-form">
+            <h3>Leave a Review</h3>
+            <form id="reviewForm" class="review-form">
+              <div class="form-group">
+                <label for="customerName">Your Name</label>
+                <input type="text" id="customerName" name="name" required>
+              </div>
+              <div class="form-group">
+                <label for="customerLocation">Location (City)</label>
+                <input type="text" id="customerLocation" name="location" required>
+              </div>
+              <div class="form-group">
+                <label for="reviewText">Your Review</label>
+                <textarea id="reviewText" name="review" rows="4" required placeholder="Tell us about your experience..."></textarea>
+              </div>
+              <div class="form-group">
+                <label for="rating">Rating</label>
+                <select id="rating" name="rating" required>
+                  <option value="">Select Rating</option>
+                  <option value="5">⭐⭐⭐⭐⭐ Excellent</option>
+                  <option value="4">⭐⭐⭐⭐ Very Good</option>
+                  <option value="3">⭐⭐⭐ Good</option>
+                  <option value="2">⭐⭐ Fair</option>
+                  <option value="1">⭐ Poor</option>
+                </select>
+              </div>
+              <button type="submit" class="button primary">Submit Review</button>
+            </form>
+          </div>
+          <div class="recent-reviews">
+            <h3>Recent Reviews</h3>
+            <div id="recentReviews" class="reviews-list">
+              <!-- Reviews will be dynamically added here -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section light email-signup">
+      <div class="container">
+        <div class="signup-content">
+          <div class="signup-text">
+            <h2>Stay Updated</h2>
+            <p class="lead">Get exclusive offers, seasonal specials, and ceramic coating tips delivered to your inbox.</p>
+            <ul class="signup-benefits">
+              <li>🎯 Exclusive member discounts</li>
+              <li>📅 Early access to booking slots</li>
+              <li>💡 Pro maintenance tips</li>
+              <li>🎉 Special event announcements</li>
+            </ul>
+          </div>
+          <div class="signup-form">
+            <form id="emailSignup" class="email-form">
+              <div class="form-group">
+                <input type="email" id="email" name="email" placeholder="Enter your email address" required>
+                <button type="submit" class="button cta">Subscribe</button>
+              </div>
+              <p class="privacy-note">We respect your privacy. Unsubscribe at any time.</p>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="pricing" class="section light pricing">
+      <div class="container">
+        <h2>Transparent Pricing</h2>
+        <p class="sub">Final quotes vary by condition and correction needs. $250 deposit applies to your total.</p>
+        <div class="tiers">
+          <div class="tier">
+            <h3>2‑Year Coating</h3>
+            <div class="price">$800–$1,100</div>
+            <ul>
+              <li>Wash · iron removal · clay</li>
+              <li>Single‑stage polish</li>
+              <li>Body coating (1 layer)</li>
+            </ul>
+          </div>
+          <div class="tier featured">
+            <h3>3–4 Year Coating <span style="font-size:12px;color:#7b5600">· Most Popular</span></h3>
+            <div class="price">$1,100–$1,500</div>
+            <ul>
+              <li>Full decon · paint correction</li>
+              <li>2‑layer body coating</li>
+              <li>Aftercare guidance</li>
+            </ul>
+          </div>
+          <div class="tier">
+            <h3>5‑Year Coating</h3>
+            <div class="price">$1,500–$2,100</div>
+            <ul>
+              <li>Multi‑stage correction</li>
+              <li>2–3 layers + topper</li>
+              <li>Aftercare kit included</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="tiers" style="margin-top:14px">
+          <div class="tier"><h3>Glass Coating (all)</h3><div class="price">$150–$250</div></div>
+          <div class="tier"><h3>Wheels & Calipers</h3><div class="price">$200–$400</div></div>
+          <div class="tier"><h3>Interior Ceramic</h3><div class="price">$200–$350</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section light process">
+      <div class="container">
+        <h2>The Process</h2>
+        <p class="sub">Measured, documented, repeatable — every time.</p>
+        <div class="steps">
+          <div class="step"><div class="icon">1</div><div>Inspection & paint‑depth readings</div></div>
+          <div class="step"><div class="icon">2</div><div>Contactless wash · iron remover · clay bar</div></div>
+          <div class="step"><div class="icon">3</div><div>Paint correction (single or multi‑stage)</div></div>
+          <div class="step"><div class="icon">4</div><div>IPA panel wipe · ceramic application</div></div>
+          <div class="step"><div class="icon">5</div><div>Cure · final QA · aftercare briefing</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="booking" class="section light booking">
+      <div class="container">
+        <h2>Book in a Calendar View</h2>
+        <p class="sub">Pick a time that works. The <strong>$250 deposit</strong> secures your appointment (demo only, no real payment).</p>
+        <div id="calendar" class="calendar"></div>
+        <div class="notice" id="nextSlot"></div>
+        <div class="cta-row" style="margin-top:12px">
+          <button id="depositBtn" class="button primary" disabled>Pay $250 Deposit</button>
+          <a href="tel:14423423627" class="button secondary">Call Jason (Jay)</a>
+        </div>
+        <div class="toast" id="toast"></div>
+      </div>
+    </section>
+
+    <section class="section light">
+      <div class="container card">
+        <h2>Contact</h2>
+        <p>Owner: <strong>Jason (Jay)</strong> · <a href="tel:14423423627">442‑342‑3627</a> · <a href="mailto:j@flawlessfini.sh">j@flawlessfini.sh</a></p>
+        <p class="sub">Serving Palm Springs & Coachella Valley with premium ceramic coating services.</p>
+      </div>
+    </section>
+
+    <footer class="light">
+      <div class="container footer">
+        <div>© 2025 Flawless Finish Ceramic Coating</div>
+        <div><a href="privacy.html">Privacy</a> · <a href="security.html">Security</a></div>
+      </div>
+    </footer>
+  </main>
+
+  <!-- Lightbox Modal -->
+  <div id="lightbox" class="lightbox">
+    <img id="lightbox-img" src="" alt="">
+    <div id="lightbox-caption" class="lightbox-caption"></div>
+  </div>
+
+  <script src="scripts.js"></script>
+  <script src="js/booking.js"></script>
+</body>
+</html>

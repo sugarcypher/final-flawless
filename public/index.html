@@ -459,6 +459,14 @@
           const calendarGrid = document.createElement('div');
           calendarGrid.className = 'calendar-days';
           
+          // Create a map of booked dates
+          const bookedDates = new Set();
+          data.days.forEach(day => {
+            if (day.booked) {
+              bookedDates.add(day.date);
+            }
+          });
+          
           let firstAvailable = null;
           
           // Generate next 30 days
@@ -469,19 +477,27 @@
             // Skip Sundays (day 0)
             if (date.getDay() !== 0) {
               const dateStr = date.toISOString().split('T')[0];
+              const isBooked = bookedDates.has(dateStr);
               const dayElement = document.createElement('div');
-              dayElement.className = 'calendar-day available';
-              dayElement.textContent = date.getDate();
-              dayElement.setAttribute('data-date', dateStr);
-              dayElement.style.cursor = 'pointer';
               
-              if (!firstAvailable) {
-                firstAvailable = { date: dateStr, displayDate: date.toLocaleDateString() };
+              if (isBooked) {
+                dayElement.className = 'calendar-day unavailable';
+                dayElement.style.cursor = 'not-allowed';
+                dayElement.textContent = date.getDate();
+              } else {
+                dayElement.className = 'calendar-day available';
+                dayElement.textContent = date.getDate();
+                dayElement.setAttribute('data-date', dateStr);
+                dayElement.style.cursor = 'pointer';
+                
+                if (!firstAvailable) {
+                  firstAvailable = { date: dateStr, displayDate: date.toLocaleDateString() };
+                }
+                
+                dayElement.addEventListener('click', function() {
+                  selectDate(dateStr, dayElement);
+                });
               }
-              
-              dayElement.addEventListener('click', function() {
-                selectDate(dateStr, dayElement);
-              });
               
               calendarGrid.appendChild(dayElement);
             }
