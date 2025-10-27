@@ -13,6 +13,9 @@ const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STR
 
 const app = express();
 
+// Trust proxy for rate limiting behind reverse proxy (Render, Cloudflare, etc.)
+app.set('trust proxy', 1);
+
 app.use(helmet({ crossOriginEmbedderPolicy: false }));
 app.use(compression());
 app.use(cors({ origin: true }));
