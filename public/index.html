@@ -423,7 +423,17 @@
       async function loadCalendar() {
         try {
           const response = await fetch('/api/availability?days=30');
+          
+          if (!response.ok) {
+            throw new Error(`API error: ${response.status}`);
+          }
+          
           const data = await response.json();
+          
+          if (!calendar) {
+            console.error('Calendar element not found');
+            return;
+          }
           
           calendar.innerHTML = '';
           
@@ -507,7 +517,15 @@
           }
         } catch (error) {
           console.error('Error loading calendar:', error);
-          nextSlot.innerHTML = '<p>Error loading calendar. Please refresh the page.</p>';
+          if (calendar) {
+            calendar.innerHTML = `<div style="padding: 2rem; text-align: center; color: #666;">
+              <p style="margin: 0;">Error loading calendar: ${error.message}</p>
+              <button onclick="location.reload()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Retry</button>
+            </div>`;
+          }
+          if (nextSlot) {
+            nextSlot.innerHTML = '<p style="color: red;">Error loading calendar. Please refresh the page.</p>';
+          }
         }
       }
       
