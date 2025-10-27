@@ -341,22 +341,37 @@
             </div>
             
             <div class="form-group">
-              <label for="vehicleType">Vehicle Type</label>
-              <select id="vehicleType" name="vehicleType" required>
-                <option value="">Select Vehicle Type</option>
-                <option value="car">Car</option>
-                <option value="truck">Truck</option>
-                <option value="suv">SUV</option>
-              </select>
+              <label for="vehicleYear">Vehicle Year</label>
+              <input type="number" id="vehicleYear" name="vehicleYear" min="1900" max="2030" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="vehicleMake">Vehicle Make</label>
+              <input type="text" id="vehicleMake" name="vehicleMake" placeholder="e.g., BMW, Mercedes, Tesla" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="vehicleModel">Vehicle Model</label>
+              <input type="text" id="vehicleModel" name="vehicleModel" placeholder="e.g., M5, Model S, E-Class" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="vehicleTrim">Vehicle Trim</label>
+              <input type="text" id="vehicleTrim" name="vehicleTrim" placeholder="e.g., Competition, Performance, AMG">
+            </div>
+            
+            <div class="form-group">
+              <label for="vehicleColor">Vehicle Color</label>
+              <input type="text" id="vehicleColor" name="vehicleColor" placeholder="e.g., Black, White, Metallic Gray" required>
             </div>
             
             <div class="form-group">
               <label for="serviceLevel">Service Level</label>
               <select id="serviceLevel" name="serviceLevel" required>
                 <option value="">Select Service Level</option>
-                <option value="minimal">Minimal Paint Correction - $700</option>
-                <option value="moderate">Moderate Paint Correction - $800</option>
-                <option value="heavy">Heavy Paint Correction - $1,000</option>
+                <option value="minimal">Minimal Paint Correction - $800</option>
+                <option value="moderate">Moderate Paint Correction - $900</option>
+                <option value="heavy">Heavy Paint Correction - $1,100</option>
               </select>
             </div>
 
@@ -526,7 +541,11 @@
             date: selectedDate,
             name: document.getElementById('customerName').value,
             phone: document.getElementById('customerPhone').value,
-            vehicleType: document.getElementById('vehicleType').value,
+            vehicleYear: document.getElementById('vehicleYear').value,
+            vehicleMake: document.getElementById('vehicleMake').value,
+            vehicleModel: document.getElementById('vehicleModel').value,
+            vehicleTrim: document.getElementById('vehicleTrim').value,
+            vehicleColor: document.getElementById('vehicleColor').value,
             serviceLevel: document.getElementById('serviceLevel').value,
             paymentMethod: 'cash'
           };
@@ -584,7 +603,11 @@
             date: selectedDate,
             name: document.getElementById('customerName').value,
             phone: document.getElementById('customerPhone').value,
-            vehicleType: document.getElementById('vehicleType').value,
+            vehicleYear: document.getElementById('vehicleYear').value,
+            vehicleMake: document.getElementById('vehicleMake').value,
+            vehicleModel: document.getElementById('vehicleModel').value,
+            vehicleTrim: document.getElementById('vehicleTrim').value,
+            vehicleColor: document.getElementById('vehicleColor').value,
             serviceLevel: document.getElementById('serviceLevel').value
           };
           
@@ -643,10 +666,13 @@
       function validateForm() {
         const name = document.getElementById('customerName').value;
         const phone = document.getElementById('customerPhone').value;
-        const vehicleType = document.getElementById('vehicleType').value;
+        const vehicleYear = document.getElementById('vehicleYear').value;
+        const vehicleMake = document.getElementById('vehicleMake').value;
+        const vehicleModel = document.getElementById('vehicleModel').value;
+        const vehicleColor = document.getElementById('vehicleColor').value;
         const serviceLevel = document.getElementById('serviceLevel').value;
         
-        if (!name || !phone || !vehicleType || !serviceLevel) {
+        if (!name || !phone || !vehicleYear || !vehicleMake || !vehicleModel || !vehicleColor || !serviceLevel) {
           alert('Please fill in all required fields.');
           return false;
         }
