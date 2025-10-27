@@ -419,8 +419,20 @@
       let selectedDate = null;
       let stripe = null;
       
-      // Load calendar from API - booking calendar feature
-      async function loadCalendar() {
+      // Load calendar - hardcoded for now
+      function loadCalendar() {
+        // Try API first, fallback to hardcoded dates if it fails
+        const tryAPI = false; // Set to true when API is working
+        
+        if (tryAPI) {
+          fetchCalendarFromAPI();
+          return;
+        }
+        
+        renderCalendar();
+      }
+      
+      async function fetchCalendarFromAPI() {
         try {
           const response = await fetch('/api/availability?days=30');
           
@@ -526,6 +538,72 @@
           if (nextSlot) {
             nextSlot.innerHTML = '<p style="color: red;">Error loading calendar. Please refresh the page.</p>';
           }
+        }
+      }
+      
+      // Render calendar without API
+      function renderCalendar() {
+        if (!calendar) {
+          console.error('Calendar element not found');
+          return;
+        }
+        
+        calendar.innerHTML = '';
+        
+        const today = new Date();
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                          'July', 'August', 'September', 'October', 'November', 'December'];
+        
+        const monthHeader = document.createElement('div');
+        monthHeader.className = 'calendar-month';
+        monthHeader.innerHTML = `<h4>${monthNames[today.getMonth()]} ${today.getFullYear()}</h4>`;
+        calendar.appendChild(monthHeader);
+        
+        const dayHeaders = document.createElement('div');
+        dayHeaders.className = 'calendar-day-headers';
+        dayHeaders.innerHTML = `
+          <div class="day-header">Mon</div>
+          <div class="day-header">Tue</div>
+          <div class="day-header">Wed</div>
+          <div class="day-header">Thu</div>
+          <div class="day-header">Fri</div>
+          <div class="day-header">Sat</div>
+        `;
+        calendar.appendChild(dayHeaders);
+        
+        const calendarGrid = document.createElement('div');
+        calendarGrid.className = 'calendar-days';
+        
+        let firstAvailable = null;
+        
+        for (let i = 1; i <= 30; i++) {
+          const date = new Date(today);
+          date.setDate(today.getDate() + i);
+          
+          if (date.getDay() !== 0) {
+            const dateStr = date.toISOString().split('T')[0];
+            const dayElement = document.createElement('div');
+            dayElement.className = 'calendar-day available';
+            dayElement.textContent = date.getDate();
+            dayElement.setAttribute('data-date', dateStr);
+            dayElement.style.cursor = 'pointer';
+            
+            if (!firstAvailable) {
+              firstAvailable = { date: dateStr, displayDate: date.toLocaleDateString() };
+            }
+            
+            dayElement.addEventListener('click', function() {
+              selectDate(dateStr, dayElement);
+            });
+            
+            calendarGrid.appendChild(dayElement);
+          }
+        }
+        
+        calendar.appendChild(calendarGrid);
+        
+        if (nextSlot && firstAvailable) {
+          nextSlot.innerHTML = `<p><strong>Next Available:</strong> ${firstAvailable.displayDate}</p>`;
         }
       }
       
