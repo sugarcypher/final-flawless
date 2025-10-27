@@ -114,14 +114,15 @@ body {
 }
 
 .button.secondary {
-  background: transparent;
+  background: #6c757d;
   color: white;
-  border: 2px solid white;
+  border: 2px solid #6c757d;
 }
 
 .button.secondary:hover {
-  background: white;
-  color: #333;
+  background: #5a6268;
+  border-color: #5a6268;
+  color: white;
 }
 
 /* Card Styles */
