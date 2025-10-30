@@ -20,16 +20,21 @@ app.set('trust proxy', 1);
 app.use(helmet({ crossOriginEmbedderPolicy: false }));
 app.use(helmet.hsts({ maxAge: 15552000, includeSubDomains: true, preload: true }));
 app.use(helmet.referrerPolicy({ policy: 'no-referrer' }));
-app.use(helmet.permissionsPolicy({
-  features: {
-    geolocation: ["'none'"],
-    camera: ["'none'"],
-    microphone: ["'none'"],
-    usb: ["'none'"],
-    payment: ["'self'"],
-    fullscreen: ["'self'"]
-  }
-}));
+// Set modern Permissions-Policy header (Helmet no longer provides an API for this)
+app.use((_, res, next) => {
+  res.setHeader(
+    'Permissions-Policy',
+    [
+      'geolocation=()',
+      'camera=()',
+      'microphone=()',
+      'usb=()',
+      'payment=(self)',
+      'fullscreen=(self)'
+    ].join(', ')
+  );
+  next();
+});
 // Basic CSP, allow our domain and Stripe for payments
 app.use(helmet.contentSecurityPolicy({
   useDefaults: true,
