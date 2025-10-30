@@ -500,9 +500,11 @@
           const year = today.getFullYear();
           const monthIndex = today.getMonth();
           const dim = daysInMonth(year, monthIndex);
+          const todayStart = new Date(year, monthIndex, today.getDate()); // strip time
           for (let day = 1; day <= dim; day++) {
             const d = new Date(year, monthIndex, day);
-            if (d.getDay() === 0) continue; // skip Sundays
+            // skip Sundays and any past dates in current month
+            if (d.getDay() === 0 || d < todayStart) continue;
             const dateStr = ymd(d);
             const isBooked = bookedDates.has(dateStr);
             const dayElement = document.createElement('div');
@@ -583,9 +585,11 @@
         const year = today.getFullYear();
         const monthIndex = today.getMonth();
         const dim = daysInMonth(year, monthIndex);
+        const todayStart = new Date(year, monthIndex, today.getDate()); // strip time
         for (let day = 1; day <= dim; day++) {
           const d = new Date(year, monthIndex, day);
-          if (d.getDay() === 0) continue; // skip Sundays
+          // skip Sundays and any past dates in current month
+          if (d.getDay() === 0 || d < todayStart) continue;
           const dateStr = ymd(d);
           const dayElement = document.createElement('div');
           dayElement.className = 'calendar-day available';
