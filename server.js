@@ -40,7 +40,8 @@ app.use(helmet.contentSecurityPolicy({
   useDefaults: true,
   directives: {
     "default-src": ["'self'"],
-    "script-src": ["'self'", 'https://js.stripe.com'],
+    // Allow inline scripts for the existing inline calendar/payment code
+    "script-src": ["'self'", "'unsafe-inline'", 'https://js.stripe.com'],
     "frame-src": ["'self'", 'https://js.stripe.com'],
     "connect-src": ["'self'"],
     "img-src": ["'self'", 'data:'],
