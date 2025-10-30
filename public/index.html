@@ -437,22 +437,15 @@
         return new Date(year, monthIndex + 1, 0).getDate();
       }
       
-      // Load calendar - hardcoded for now
+      // Load calendar - API-backed with multi-month rendering
       function loadCalendar() {
-        // Try API first, fallback to hardcoded dates if it fails
-        const tryAPI = true; // Set to true when API is working
-        
-        if (tryAPI) {
-          fetchCalendarFromAPI();
-          return;
-        }
-        
-        renderCalendar();
+        fetchCalendarFromAPI();
       }
       
       async function fetchCalendarFromAPI() {
         try {
-          const response = await fetch('/api/availability?days=30');
+          // 6 months ahead (approx 180 days)
+          const response = await fetch('/api/availability?days=185');
           
           if (!response.ok) {
             throw new Error(`API error: ${response.status}`);
@@ -466,74 +459,77 @@
           }
           
           calendar.innerHTML = '';
-          
-          // Create month header for current month
-          const today = new Date();
+
           const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                            'July', 'August', 'September', 'October', 'November', 'December'];
-          
-          const monthHeader = document.createElement('div');
-          monthHeader.className = 'calendar-month';
-          monthHeader.innerHTML = `<h4>${monthNames[today.getMonth()]} ${today.getFullYear()}</h4>`;
-          calendar.appendChild(monthHeader);
-          
-          // Create day headers
-          const dayHeaders = document.createElement('div');
-          dayHeaders.className = 'calendar-day-headers';
-          dayHeaders.innerHTML = `
-            <div class="day-header">Mon</div>
-            <div class="day-header">Tue</div>
-            <div class="day-header">Wed</div>
-            <div class="day-header">Thu</div>
-            <div class="day-header">Fri</div>
-            <div class="day-header">Sat</div>
-          `;
-          calendar.appendChild(dayHeaders);
-          
-          // Create calendar grid
-          const calendarGrid = document.createElement('div');
-          calendarGrid.className = 'calendar-days';
-          
-          // Map booked dates and build a proper month grid (Mon-Sat, skip Sundays)
+                              'July', 'August', 'September', 'October', 'November', 'December'];
+          const now = new Date();
           const bookedDates = new Set((data.days || []).filter(d => d.booked).map(d => d.date));
           let firstAvailable = null;
-          const year = today.getFullYear();
-          const monthIndex = today.getMonth();
-          const dim = daysInMonth(year, monthIndex);
-          const todayStart = new Date(year, monthIndex, today.getDate()); // strip time
-          for (let day = 1; day <= dim; day++) {
-            const d = new Date(year, monthIndex, day);
-            // skip Sundays and any past dates in current month
-            if (d.getDay() === 0 || d < todayStart) continue;
-            const dateStr = ymd(d);
-            const isBooked = bookedDates.has(dateStr);
-            const dayElement = document.createElement('div');
-            if (isBooked) {
-              dayElement.className = 'calendar-day unavailable';
-              dayElement.style.cursor = 'not-allowed';
-              dayElement.textContent = String(day);
-            } else {
-              dayElement.className = 'calendar-day available';
-              dayElement.textContent = String(day);
-              dayElement.setAttribute('data-date', dateStr);
-              dayElement.style.cursor = 'pointer';
-              if (!firstAvailable) {
-                firstAvailable = { date: dateStr, displayDate: humanFromYMD(dateStr) };
+
+          // Render current month and next 5 months (total 6 months visible)
+          for (let offset = 0; offset < 6; offset++) {
+            const base = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+            const year = base.getFullYear();
+            const monthIndex = base.getMonth();
+            const dim = daysInMonth(year, monthIndex);
+            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+            // Month header
+            const monthHeader = document.createElement('div');
+            monthHeader.className = 'calendar-month';
+            monthHeader.innerHTML = `<h4>${monthNames[monthIndex]} ${year}</h4>`;
+            calendar.appendChild(monthHeader);
+
+            // Day headers
+            const dayHeaders = document.createElement('div');
+            dayHeaders.className = 'calendar-day-headers';
+            dayHeaders.innerHTML = `
+              <div class="day-header">Mon</div>
+              <div class="day-header">Tue</div>
+              <div class="day-header">Wed</div>
+              <div class="day-header">Thu</div>
+              <div class="day-header">Fri</div>
+              <div class="day-header">Sat</div>
+            `;
+            calendar.appendChild(dayHeaders);
+
+            // Month grid
+            const calendarGrid = document.createElement('div');
+            calendarGrid.className = 'calendar-days';
+
+            for (let day = 1; day <= dim; day++) {
+              const d = new Date(year, monthIndex, day);
+              // Skip Sundays and any past dates in the current month
+              if (d.getDay() === 0) continue;
+              if (d < todayStart) continue;
+              const dateStr = ymd(d);
+              const isBooked = bookedDates.has(dateStr);
+              const dayElement = document.createElement('div');
+              if (isBooked) {
+                dayElement.className = 'calendar-day unavailable';
+                dayElement.style.cursor = 'not-allowed';
+                dayElement.textContent = String(day);
+              } else {
+                dayElement.className = 'calendar-day available';
+                dayElement.textContent = String(day);
+                dayElement.setAttribute('data-date', dateStr);
+                dayElement.style.cursor = 'pointer';
+                if (!firstAvailable) {
+                  firstAvailable = { date: dateStr, displayDate: humanFromYMD(dateStr) };
+                }
+                dayElement.addEventListener('click', function() {
+                  selectDate(dateStr, dayElement);
+                });
               }
-              dayElement.addEventListener('click', function() {
-                selectDate(dateStr, dayElement);
-              });
+              calendarGrid.appendChild(dayElement);
             }
-            calendarGrid.appendChild(dayElement);
+
+            calendar.appendChild(calendarGrid);
           }
-          
-          calendar.appendChild(calendarGrid);
-          
-          if (firstAvailable) {
-            nextSlot.innerHTML = `<p><strong>Next Available:</strong> ${firstAvailable.displayDate}</p>`;
-          } else {
-            nextSlot.innerHTML = '<p>No available dates in the next 30 days</p>';
-          }
+
+          nextSlot.innerHTML = firstAvailable
+            ? `<p><strong>Next Available:</strong> ${firstAvailable.displayDate}</p>`
+            : '<p>No available dates found in the next 6 months</p>';
         } catch (error) {
           console.error('Error loading calendar:', error);
           if (calendar) {
@@ -692,7 +688,7 @@
           const keyResponse = await fetch('/api/stripe-key');
           const { publishableKey } = await keyResponse.json();
           
-          if (!publishableKey) {
+          if (!publishableKey || typeof publishableKey !== 'string' || publishableKey.trim().length === 0) {
             alert('Payment system not configured. Please contact us directly.');
             return;
           }
@@ -729,9 +725,7 @@
           
           if (result.success) {
             // Initialize Stripe Elements
-            elements = stripe.elements({
-              clientSecret: result.clientSecret
-            });
+            elements = stripe.elements({ clientSecret: result.clientSecret });
             
             const paymentElement = elements.create('payment');
             paymentElement.mount('#payment-element');
