@@ -420,6 +420,22 @@
       let selectedDate = null;
       let stripe = null;
       let elements = null;
+
+      // Helpers to avoid timezone shifts and build month views
+      function ymd(date) {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      }
+      function humanFromYMD(ymdStr) {
+        const [y, m, d] = ymdStr.split('-').map(Number);
+        const date = new Date(Date.UTC(y, m - 1, d));
+        return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+      }
+      function daysInMonth(year, monthIndex) {
+        return new Date(year, monthIndex + 1, 0).getDate();
+      }
       
       // Load calendar - hardcoded for now
       function loadCalendar() {
@@ -451,7 +467,7 @@
           
           calendar.innerHTML = '';
           
-          // Create month header
+          // Create month header for current month
           const today = new Date();
           const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                             'July', 'August', 'September', 'October', 'November', 'December'];
@@ -478,48 +494,35 @@
           const calendarGrid = document.createElement('div');
           calendarGrid.className = 'calendar-days';
           
-          // Create a map of booked dates
-          const bookedDates = new Set();
-          data.days.forEach(day => {
-            if (day.booked) {
-              bookedDates.add(day.date);
-            }
-          });
-          
+          // Map booked dates and build a proper month grid (Mon-Sat, skip Sundays)
+          const bookedDates = new Set((data.days || []).filter(d => d.booked).map(d => d.date));
           let firstAvailable = null;
-          
-          // Generate next 30 days
-          for (let i = 1; i <= 30; i++) {
-            const date = new Date(today);
-            date.setDate(today.getDate() + i);
-            
-            // Skip Sundays (day 0)
-            if (date.getDay() !== 0) {
-              const dateStr = date.toISOString().split('T')[0];
-              const isBooked = bookedDates.has(dateStr);
-              const dayElement = document.createElement('div');
-              
-              if (isBooked) {
-                dayElement.className = 'calendar-day unavailable';
-                dayElement.style.cursor = 'not-allowed';
-                dayElement.textContent = date.getDate();
-              } else {
-                dayElement.className = 'calendar-day available';
-                dayElement.textContent = date.getDate();
-                dayElement.setAttribute('data-date', dateStr);
-                dayElement.style.cursor = 'pointer';
-                
-                if (!firstAvailable) {
-                  firstAvailable = { date: dateStr, displayDate: date.toLocaleDateString() };
-                }
-                
-                dayElement.addEventListener('click', function() {
-                  selectDate(dateStr, dayElement);
-                });
+          const year = today.getFullYear();
+          const monthIndex = today.getMonth();
+          const dim = daysInMonth(year, monthIndex);
+          for (let day = 1; day <= dim; day++) {
+            const d = new Date(year, monthIndex, day);
+            if (d.getDay() === 0) continue; // skip Sundays
+            const dateStr = ymd(d);
+            const isBooked = bookedDates.has(dateStr);
+            const dayElement = document.createElement('div');
+            if (isBooked) {
+              dayElement.className = 'calendar-day unavailable';
+              dayElement.style.cursor = 'not-allowed';
+              dayElement.textContent = String(day);
+            } else {
+              dayElement.className = 'calendar-day available';
+              dayElement.textContent = String(day);
+              dayElement.setAttribute('data-date', dateStr);
+              dayElement.style.cursor = 'pointer';
+              if (!firstAvailable) {
+                firstAvailable = { date: dateStr, displayDate: humanFromYMD(dateStr) };
               }
-              
-              calendarGrid.appendChild(dayElement);
+              dayElement.addEventListener('click', function() {
+                selectDate(dateStr, dayElement);
+              });
             }
+            calendarGrid.appendChild(dayElement);
           }
           
           calendar.appendChild(calendarGrid);
@@ -577,29 +580,25 @@
         calendarGrid.className = 'calendar-days';
         
         let firstAvailable = null;
-        
-        for (let i = 1; i <= 30; i++) {
-          const date = new Date(today);
-          date.setDate(today.getDate() + i);
-          
-          if (date.getDay() !== 0) {
-            const dateStr = date.toISOString().split('T')[0];
-            const dayElement = document.createElement('div');
-            dayElement.className = 'calendar-day available';
-            dayElement.textContent = date.getDate();
-            dayElement.setAttribute('data-date', dateStr);
-            dayElement.style.cursor = 'pointer';
-            
-            if (!firstAvailable) {
-              firstAvailable = { date: dateStr, displayDate: date.toLocaleDateString() };
-            }
-            
-            dayElement.addEventListener('click', function() {
-              selectDate(dateStr, dayElement);
-            });
-            
-            calendarGrid.appendChild(dayElement);
+        const year = today.getFullYear();
+        const monthIndex = today.getMonth();
+        const dim = daysInMonth(year, monthIndex);
+        for (let day = 1; day <= dim; day++) {
+          const d = new Date(year, monthIndex, day);
+          if (d.getDay() === 0) continue; // skip Sundays
+          const dateStr = ymd(d);
+          const dayElement = document.createElement('div');
+          dayElement.className = 'calendar-day available';
+          dayElement.textContent = String(day);
+          dayElement.setAttribute('data-date', dateStr);
+          dayElement.style.cursor = 'pointer';
+          if (!firstAvailable) {
+            firstAvailable = { date: dateStr, displayDate: humanFromYMD(dateStr) };
           }
+          dayElement.addEventListener('click', function() {
+            selectDate(dateStr, dayElement);
+          });
+          calendarGrid.appendChild(dayElement);
         }
         
         calendar.appendChild(calendarGrid);
@@ -626,7 +625,7 @@
         // Show selected date
         const selectedDateDisplay = document.getElementById('selectedDate');
         if (selectedDateDisplay) {
-          selectedDateDisplay.textContent = `Selected: ${new Date(date).toLocaleDateString()}`;
+          selectedDateDisplay.textContent = `Selected: ${humanFromYMD(date)}`;
         }
       }
       
