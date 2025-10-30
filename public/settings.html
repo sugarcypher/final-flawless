@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Privacy & Security Settings – Flawless Finish</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="light">
+  <div class="container">
+    <h1>Privacy & Security Settings</h1>
+    <p class="sub">Control how your data is used. Functional cookies are required to provide the booking service. Analytics and marketing are optional and default to off.</p>
+
+    <div class="card">
+      <h2>Preferences</h2>
+      <form id="prefsForm" class="booking-form" style="max-width:640px">
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="functional" disabled checked>
+            Functional cookies (required)
+          </label>
+          <p class="sub">Used to remember your booking and security settings. Always on.</p>
+        </div>
+
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="analytics">
+            Analytics cookies
+          </label>
+          <p class="sub">Helps improve the site. Off by default.</p>
+        </div>
+
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="marketing">
+            Marketing cookies
+          </label>
+          <p class="sub">Personalized offers. Off by default.</p>
+        </div>
+
+        <div class="form-group">
+          <label for="communications">Preferred communications</label>
+          <select id="communications">
+            <option value="none">None</option>
+            <option value="sms">SMS</option>
+            <option value="email">Email</option>
+          </select>
+        </div>
+
+        <button type="submit" class="button primary">Save preferences</button>
+        <span id="statusMsg" style="margin-left:12px"></span>
+      </form>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h2>Policies</h2>
+      <p>Read our <a href="privacy.html">Privacy Policy</a> and <a href="security.html">Security Overview</a>. We respect Do Not Track and only collect what you provide for booking.</p>
+    </div>
+
+    <p style="margin-top:16px"><a href="index.html">← Back</a></p>
+  </div>
+
+  <script>
+    (async function() {
+      try {
+        const res = await fetch('/api/preferences');
+        const json = await res.json();
+        const prefs = (json && json.preferences) || { functional: true, analytics: false, marketing: false, communications: 'none' };
+        document.getElementById('analytics').checked = !!prefs.analytics;
+        document.getElementById('marketing').checked = !!prefs.marketing;
+        document.getElementById('communications').value = prefs.communications || 'none';
+      } catch (e) {
+        console.warn('Load prefs failed', e);
+      }
+
+      const form = document.getElementById('prefsForm');
+      form.addEventListener('submit', async function(ev) {
+        ev.preventDefault();
+        const payload = {
+          functional: true,
+          analytics: document.getElementById('analytics').checked,
+          marketing: document.getElementById('marketing').checked,
+          communications: document.getElementById('communications').value
+        };
+        try {
+          const res = await fetch('/api/preferences', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const json = await res.json();
+          const status = document.getElementById('statusMsg');
+          if (json && json.success) {
+            status.textContent = 'Saved';
+            status.style.color = '#2e7d32';
+          } else {
+            status.textContent = 'Save failed';
+            status.style.color = '#c62828';
+          }
+        } catch (e) {
+          const status = document.getElementById('statusMsg');
+          status.textContent = 'Network error';
+          status.style.color = '#c62828';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
+
+

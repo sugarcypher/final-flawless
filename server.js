@@ -4,6 +4,7 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
 const compression = require('compression');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
@@ -17,8 +18,60 @@ const app = express();
 app.set('trust proxy', 1);
 
 app.use(helmet({ crossOriginEmbedderPolicy: false }));
+app.use(helmet.hsts({ maxAge: 15552000, includeSubDomains: true, preload: true }));
+app.use(helmet.referrerPolicy({ policy: 'no-referrer' }));
+app.use(helmet.permissionsPolicy({
+  features: {
+    geolocation: ["'none'"],
+    camera: ["'none'"],
+    microphone: ["'none'"],
+    usb: ["'none'"],
+    payment: ["'self'"],
+    fullscreen: ["'self'"]
+  }
+}));
+// Basic CSP, allow our domain and Stripe for payments
+app.use(helmet.contentSecurityPolicy({
+  useDefaults: true,
+  directives: {
+    "default-src": ["'self'"],
+    "script-src": ["'self'", 'https://js.stripe.com'],
+    "frame-src": ["'self'", 'https://js.stripe.com'],
+    "connect-src": ["'self'"],
+    "img-src": ["'self'", 'data:'],
+    "style-src": ["'self'", "'unsafe-inline'"],
+    "base-uri": ["'self'"],
+    "form-action": ["'self'"]
+  }
+}));
 app.use(compression());
-app.use(cors({ origin: true }));
+
+// Restrictive CORS configuration with whitelist
+const defaultAllowedOrigins = [
+  'https://flawlessfini.sh',
+  'https://www.flawlessfini.sh',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000'
+];
+const envAllowed = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
+const allowedOrigins = Array.from(new Set([...defaultAllowedOrigins, ...envAllowed]));
+
+app.use(cors({
+  origin: function(origin, callback) {
+    // Block requests with no origin (like curl) by default
+    if (!origin) return callback(null, false);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(null, false);
+  },
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Cookies for user preferences (signed)
+app.use(cookieParser(process.env.COOKIE_SECRET || 'change-me'));
 app.disable('x-powered-by');
 
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200 });
@@ -28,6 +81,43 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 const BOOKINGS_FILE = path.join(__dirname, 'bookings.json');
+
+// ── Preferences API ────────────────────────────────────────────────────────────
+// Shape: { functional: true, analytics: false, marketing: false, communications: 'sms'|'email'|'none' }
+app.get('/api/preferences', (req, res) => {
+  try {
+    const raw = req.signedCookies?.ff_prefs;
+    const prefs = raw ? JSON.parse(raw) : null;
+    return res.json({
+      success: true,
+      preferences: Object.assign({ functional: true, analytics: false, marketing: false, communications: 'none' }, prefs || {})
+    });
+  } catch {
+    return res.json({ success: true, preferences: { functional: true, analytics: false, marketing: false, communications: 'none' } });
+  }
+});
+
+app.post('/api/preferences', (req, res) => {
+  try {
+    const { functional = true, analytics = false, marketing = false, communications = 'none' } = req.body || {};
+    const sanitized = {
+      functional: Boolean(functional),
+      analytics: Boolean(analytics),
+      marketing: Boolean(marketing),
+      communications: ['sms','email','none'].includes(communications) ? communications : 'none'
+    };
+    res.cookie('ff_prefs', JSON.stringify(sanitized), {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: true,
+      signed: true,
+      maxAge: 31536000000 // 1 year
+    });
+    return res.json({ success: true, preferences: sanitized });
+  } catch (e) {
+    return res.status(400).json({ success: false, message: 'Invalid preferences' });
+  }
+});
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function readBookings() {
@@ -49,6 +139,17 @@ function toYMD(d) {
   const m = String(dt.getMonth() + 1).padStart(2, '0');
   const day = String(dt.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
+}
+
+// HTML-escape helper to prevent injection in email templates
+function escapeHtml(input) {
+  const str = String(input ?? '');
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 // ── Email Configuration ─────────────────────────────────────────────────────────
@@ -88,23 +189,23 @@ async function sendEmailNotification(bookingData) {
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
                 <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold; width: 30%;">Name:</td>
-                <td style="padding: 10px; border-bottom: 1px solid #ddd;">${customerName}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #ddd;">${escapeHtml(customerName)}</td>
               </tr>
               <tr>
                 <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold;">Phone:</td>
-                <td style="padding: 10px; border-bottom: 1px solid #ddd;">${customerPhone}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #ddd;">${escapeHtml(customerPhone)}</td>
               </tr>
               <tr>
                 <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold;">Email:</td>
-                <td style="padding: 10px; border-bottom: 1px solid #ddd;">${customerEmail}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #ddd;">${escapeHtml(customerEmail)}</td>
               </tr>
               <tr>
                 <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold;">Date:</td>
-                <td style="padding: 10px; border-bottom: 1px solid #ddd;">${selectedDate}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #ddd;">${escapeHtml(selectedDate)}</td>
               </tr>
               <tr>
                 <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold;">Vehicle:</td>
-                <td style="padding: 10px; border-bottom: 1px solid #ddd;">${vehicleInfo || 'Not specified'}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #ddd;">${escapeHtml(vehicleInfo || 'Not specified')}</td>
               </tr>
               <tr>
                 <td style="padding: 10px; font-weight: bold;">Deposit:</td>
@@ -248,7 +349,7 @@ app.post('/api/confirm-payment', async (req, res) => {
     await sendEmailNotification({
       customerName: sanitizedName || 'N/A',
       customerPhone: sanitizedPhone || 'N/A',
-      customerEmail: sanitizedEmail || 'Not provided',
+      customerEmail: 'Not provided',
       selectedDate: humanDate,
       vehicleInfo: 'Not specified',
       depositAmount: 25000,

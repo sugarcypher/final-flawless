@@ -402,6 +402,7 @@
         <p>Palm Springs & Coachella Valley</p>
         <p>Call: <a href="tel:4423423627" style="color: #007bff;">(442) 342-3627</a></p>
         <p>Owner: Jason (Jay)</p>
+        <p><a href="privacy.html" style="color:#007bff">Privacy</a> · <a href="security.html" style="color:#007bff">Security</a> · <a href="settings.html" style="color:#007bff">Privacy & Security Settings</a></p>
       </div>
     </div>
   </footer>
@@ -418,11 +419,12 @@
       
       let selectedDate = null;
       let stripe = null;
+      let elements = null;
       
       // Load calendar - hardcoded for now
       function loadCalendar() {
         // Try API first, fallback to hardcoded dates if it fails
-        const tryAPI = false; // Set to true when API is working
+        const tryAPI = true; // Set to true when API is working
         
         if (tryAPI) {
           fetchCalendarFromAPI();
@@ -706,6 +708,13 @@
             vehicleColor: document.getElementById('vehicleColor').value,
             serviceLevel: document.getElementById('serviceLevel').value
           };
+
+          // Persist minimal booking info for post-redirect confirmation
+          localStorage.setItem('ff_booking', JSON.stringify({
+            date: formData.date,
+            name: formData.name,
+            phone: formData.phone
+          }));
           
           const response = await fetch('/api/create-payment-intent', {
             method: 'POST',
@@ -717,7 +726,7 @@
           
           if (result.success) {
             // Initialize Stripe Elements
-            const elements = stripe.elements({
+            elements = stripe.elements({
               clientSecret: result.clientSecret
             });
             
@@ -730,7 +739,7 @@
             bookingForm.addEventListener('submit', async function(e) {
               e.preventDefault();
               
-              const { error } = await stripe.confirmPayment({
+              const { error, paymentIntent } = await stripe.confirmPayment({
                 elements,
                 confirmParams: {
                   return_url: window.location.href
@@ -739,7 +748,34 @@
               
               if (error) {
                 alert('Payment failed: ' + error.message);
-              } else {
+                return;
+              }
+
+              // Some payments succeed immediately without redirect
+              if (paymentIntent && paymentIntent.status === 'succeeded') {
+                try {
+                  const bookingStored = JSON.parse(localStorage.getItem('ff_booking') || '{}');
+                  const confirmRes = await fetch('/api/confirm-payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      paymentIntentId: paymentIntent.id,
+                      date: bookingStored.date || formData.date,
+                      name: bookingStored.name || formData.name,
+                      phone: bookingStored.phone || formData.phone
+                    })
+                  });
+                  const confirmJson = await confirmRes.json();
+                  if (!confirmJson.success) {
+                    alert('Booking confirmation failed: ' + (confirmJson.message || 'Unknown error'));
+                    return;
+                  }
+                } catch (e) {
+                  console.error(e);
+                  alert('Booking confirmation failed. Please contact us.');
+                  return;
+                }
+
                 alert('Payment successful! Your booking has been confirmed.');
                 bookingForm.reset();
                 paymentForm.style.display = 'none';
@@ -747,6 +783,7 @@
                 document.querySelectorAll('.calendar-day').forEach(day => {
                   day.classList.remove('selected');
                 });
+                localStorage.removeItem('ff_booking');
               }
             });
           } else {
@@ -783,6 +820,41 @@
       
       // Initialize calendar
       loadCalendar();
+
+      // If returning from Stripe redirect, finalize booking
+      (async function finalizeIfRedirected() {
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const paymentIntentId = params.get('payment_intent');
+          const redirectStatus = params.get('redirect_status');
+          if (paymentIntentId && redirectStatus === 'succeeded') {
+            const bookingStored = JSON.parse(localStorage.getItem('ff_booking') || '{}');
+            if (bookingStored && bookingStored.date && bookingStored.name) {
+              const confirmRes = await fetch('/api/confirm-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  paymentIntentId,
+                  date: bookingStored.date,
+                  name: bookingStored.name,
+                  phone: bookingStored.phone
+                })
+              });
+              const confirmJson = await confirmRes.json();
+              if (confirmJson.success) {
+                alert('Payment successful! Your booking has been confirmed.');
+                localStorage.removeItem('ff_booking');
+                // Clean URL params
+                window.history.replaceState({}, document.title, window.location.pathname);
+              } else {
+                alert('Booking confirmation failed: ' + (confirmJson.message || 'Unknown error'));
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Finalize redirect error:', e);
+        }
+      })();
     });
   </script>
 </body>
