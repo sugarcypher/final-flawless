@@ -179,7 +179,7 @@ async function sendEmailNotification(bookingData) {
   }
   
   try {
-    const { customerName, customerPhone, customerEmail, selectedDate, vehicleInfo, depositAmount } = bookingData;
+    const { customerName, customerPhone, customerEmail, selectedDate, vehicleInfo, depositAmount, serviceLevel } = bookingData;
     
     const mailOptions = {
       from: `"Flawless Finish Website" <${process.env.EMAIL_USER}>`,
@@ -212,6 +212,10 @@ async function sendEmailNotification(bookingData) {
               <tr>
                 <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold;">Vehicle:</td>
                 <td style="padding: 10px; border-bottom: 1px solid #ddd;">${escapeHtml(vehicleInfo || 'Not specified')}</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold;">Service:</td>
+                <td style="padding: 10px; border-bottom: 1px solid #ddd;">${escapeHtml(serviceLevel || 'Not specified')}</td>
               </tr>
               <tr>
                 <td style="padding: 10px; font-weight: bold;">Deposit:</td>
@@ -287,9 +291,8 @@ app.post('/api/create-payment-intent', async (req, res) => {
       amount: 25000, // $250.00 in cents
       currency: 'usd',
       metadata: {
+        // Keep metadata minimal to avoid storing PII in Stripe
         date: String(date).slice(0, 10),
-        name: String(name || '').slice(0, 80),
-        phone: String(phone || '').slice(0, 40),
         service: 'Flawless Finish Ceramic Coating Deposit'
       }
     });
@@ -315,7 +318,7 @@ app.post('/api/confirm-payment', async (req, res) => {
       });
     }
 
-    const { paymentIntentId, date, name, phone } = req.body || {};
+    const { paymentIntentId, date, name, phone, vehicleYear, vehicleMake, vehicleModel, vehicleTrim, vehicleColor, serviceLevel } = req.body || {};
     
     if (!paymentIntentId || !date) {
       return res.status(400).json({ success: false, message: 'Missing payment or date information.' });
@@ -332,20 +335,21 @@ app.post('/api/confirm-payment', async (req, res) => {
     const sanitizedDate = String(date).slice(0, 10);
     const sanitizedName = String(name || '').slice(0, 80);
     const sanitizedPhone = String(phone || '').slice(0, 40);
+    const vehicleSummary = [vehicleYear, vehicleMake, vehicleModel, vehicleTrim, vehicleColor]
+      .map(x => (x == null ? '' : String(x).trim()))
+      .filter(Boolean)
+      .join(' ');
 
     const bookings = readBookings();
     if (bookings.some(b => b.date === sanitizedDate)) {
       return res.status(409).json({ success: false, message: 'That day is already booked.' });
     }
 
-    // Save booking with payment confirmation
+    // Save only the booked date and non-PII details
     bookings.push({ 
-      date: sanitizedDate, 
-      name: sanitizedName, 
-      phone: sanitizedPhone, 
-      method: 'card', 
+      date: sanitizedDate,
+      method: 'card',
       deposit: 250,
-      stripePaymentId: paymentIntentId,
       createdAt: new Date().toISOString() 
     });
     writeBookings(bookings);
@@ -357,7 +361,8 @@ app.post('/api/confirm-payment', async (req, res) => {
       customerPhone: sanitizedPhone || 'N/A',
       customerEmail: 'Not provided',
       selectedDate: humanDate,
-      vehicleInfo: 'Not specified',
+      vehicleInfo: vehicleSummary || 'Not specified',
+      serviceLevel: serviceLevel || 'Not specified',
       depositAmount: 25000,
       paymentMethod: 'Stripe Card',
       stripePaymentId: paymentIntentId
@@ -378,7 +383,7 @@ app.post('/api/confirm-payment', async (req, res) => {
 
 // ── API: book cash reservation ────────────────────────────────────────────────
 app.post('/api/book-cash', async (req, res) => {
-  let { date, name, phone } = req.body || {};
+  let { date, name, phone, vehicleYear, vehicleMake, vehicleModel, vehicleTrim, vehicleColor, serviceLevel } = req.body || {};
   if (!date) return res.status(400).json({ success: false, message: 'Please select a date.' });
   if (!name || name.trim().length === 0) return res.status(400).json({ success: false, message: 'Please enter your name.' });
   if (!phone || phone.trim().length === 0) return res.status(400).json({ success: false, message: 'Please enter your phone number.' });
@@ -387,17 +392,19 @@ app.post('/api/book-cash', async (req, res) => {
   const sanitizedDate = String(date).slice(0, 10); // YYYY-MM-DD
   const sanitizedName = typeof name === 'string' ? name.slice(0, 80) : '';
   const sanitizedPhone = typeof phone === 'string' ? phone.slice(0, 40) : '';
+  const vehicleSummary = [vehicleYear, vehicleMake, vehicleModel, vehicleTrim, vehicleColor]
+    .map(x => (x == null ? '' : String(x).trim()))
+    .filter(Boolean)
+    .join(' ');
 
   const bookings = readBookings();
   if (bookings.some(b => b.date === sanitizedDate)) {
     return res.status(409).json({ success: false, message: 'That day is already booked.' });
   }
 
-  // Save cash booking
+  // Save only the booked date and non-PII details
   bookings.push({ 
-    date: sanitizedDate, 
-    name: sanitizedName, 
-    phone: sanitizedPhone, 
+    date: sanitizedDate,
     method: 'cash', 
     deposit: 0, 
     createdAt: new Date().toISOString() 
@@ -411,7 +418,8 @@ app.post('/api/book-cash', async (req, res) => {
     customerPhone: sanitizedPhone || 'N/A',
     customerEmail: 'Not provided',
     selectedDate: humanDate,
-    vehicleInfo: 'Not specified',
+    vehicleInfo: vehicleSummary || 'Not specified',
+    serviceLevel: serviceLevel || 'Not specified',
     depositAmount: 0,
     paymentMethod: 'Cash Reservation',
     stripePaymentId: 'N/A'

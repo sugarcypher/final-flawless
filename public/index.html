@@ -759,7 +759,13 @@
                       paymentIntentId: paymentIntent.id,
                       date: bookingStored.date || formData.date,
                       name: bookingStored.name || formData.name,
-                      phone: bookingStored.phone || formData.phone
+                      phone: bookingStored.phone || formData.phone,
+                      vehicleYear: formData.vehicleYear,
+                      vehicleMake: formData.vehicleMake,
+                      vehicleModel: formData.vehicleModel,
+                      vehicleTrim: formData.vehicleTrim,
+                      vehicleColor: formData.vehicleColor,
+                      serviceLevel: formData.serviceLevel
                     })
                   });
                   const confirmJson = await confirmRes.json();
@@ -834,7 +840,13 @@
                   paymentIntentId,
                   date: bookingStored.date,
                   name: bookingStored.name,
-                  phone: bookingStored.phone
+                  phone: bookingStored.phone,
+                  vehicleYear: document.getElementById('vehicleYear').value,
+                  vehicleMake: document.getElementById('vehicleMake').value,
+                  vehicleModel: document.getElementById('vehicleModel').value,
+                  vehicleTrim: document.getElementById('vehicleTrim').value,
+                  vehicleColor: document.getElementById('vehicleColor').value,
+                  serviceLevel: document.getElementById('serviceLevel').value
                 })
               });
               const confirmJson = await confirmRes.json();
