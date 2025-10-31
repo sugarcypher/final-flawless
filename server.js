@@ -201,6 +201,14 @@ function escapeHtml(input) {
     .replace(/'/g, '&#39;');
 }
 
+// Helper to sanitize a phone number for use in a tel: href
+function sanitizePhoneForTelLink(phone) {
+  // Only allow numbers, +, -, (, ), and spaces for tel: URIs
+  return String(phone || '')
+    .replace(/[^0-9+\-\s\(\)]/g, '')
+    .trim();
+}
+
 // ── Email Configuration ─────────────────────────────────────────────────────────
 const emailConfig = {
   host: process.env.EMAIL_HOST || 'smtp.gmail.com',
@@ -279,7 +287,7 @@ async function sendEmailNotification(bookingData) {
             </div>
 
             <div style="margin-top: 20px; text-align: center;">
-              <a href="tel:${customerPhone}" style="background: #FFD700; color: #0a0f1a; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+              <a href="tel:${sanitizePhoneForTelLink(customerPhone)}" style="background: #FFD700; color: #0a0f1a; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
                 📞 Call Customer
               </a>
             </div>
