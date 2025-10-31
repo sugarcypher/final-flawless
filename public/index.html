@@ -656,7 +656,7 @@
           const result = await response.json();
           
           if (result.success) {
-            alert('Cash booking submitted successfully! We will contact you to confirm your appointment.');
+            alert('Thanks for booking! If you don\'t hear from Jason in the next hour, give him a call!');
             bookingForm.reset();
             selectedDate = null;
             document.querySelectorAll('.calendar-day').forEach(day => {
@@ -779,7 +779,7 @@
                   return;
                 }
 
-                alert('Payment successful! Your booking has been confirmed.');
+                alert('Thanks for booking! If you don\'t hear from Jason in the next hour, give him a call!');
                 bookingForm.reset();
                 paymentForm.style.display = 'none';
                 selectedDate = null;
@@ -851,7 +851,7 @@
               });
               const confirmJson = await confirmRes.json();
               if (confirmJson.success) {
-                alert('Payment successful! Your booking has been confirmed.');
+                alert('Thanks for booking! If you don\'t hear from Jason in the next hour, give him a call!');
                 localStorage.removeItem('ff_booking');
                 // Clean URL params
                 window.history.replaceState({}, document.title, window.location.pathname);
