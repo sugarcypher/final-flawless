@@ -52,7 +52,16 @@ if (!stripePublishableKey) {
   console.warn('⚠️  STRIPE_PUBLISHABLE_KEY/PUB_KEY not found (env or /etc/secrets/PUB_KEY) - payment button will show as not configured');
   console.log('Available env vars:', Object.keys(process.env).filter(k => k.includes('PUB') || k.includes('STRIPE')).join(', ') || 'none');
 } else {
-  console.log('✓ Stripe publishable key available');
+  // Validate key format
+  if (!stripePublishableKey.startsWith('pk_')) {
+    console.error('❌ Invalid Stripe publishable key format!');
+    console.error('Key should start with "pk_test_" or "pk_live_"');
+    console.error('Received key starts with:', stripePublishableKey.substring(0, 20) + '...');
+    console.error('Key length:', stripePublishableKey.length);
+    console.error('Check Render secrets: PUB_KEY should contain your Stripe Publishable Key (starts with pk_)');
+  } else {
+    console.log('✓ Stripe publishable key available and valid format');
+  }
 }
 
 const app = express();
@@ -501,14 +510,25 @@ app.post('/api/book-cash', async (req, res) => {
 // ── API: get Stripe publishable key ───────────────────────────────────────────
 app.get('/api/stripe-key', (_, res) => {
   // Support both STRIPE_PUBLISHABLE_KEY/PUB_KEY env vars and Render secret files
-  const key = getSecret('STRIPE_PUBLISHABLE_KEY', 'PUB_KEY') || getSecret('PUB_KEY', null) || '';
+  let key = getSecret('STRIPE_PUBLISHABLE_KEY', 'PUB_KEY') || getSecret('PUB_KEY', null) || '';
+  
+  // Validate key format - must start with pk_test_ or pk_live_
+  if (key && !key.startsWith('pk_')) {
+    console.error('❌ Invalid Stripe publishable key format in API response');
+    console.error('Key should start with "pk_test_" or "pk_live_"');
+    console.error('Received key starts with:', key.substring(0, 20) + '...');
+    console.error('Returning empty key to prevent frontend errors');
+    key = ''; // Return empty to trigger proper error handling on frontend
+  }
+  
   if (!key) {
-    console.warn('STRIPE_PUBLISHABLE_KEY/PUB_KEY not found (env or /etc/secrets/PUB_KEY)');
+    console.warn('STRIPE_PUBLISHABLE_KEY/PUB_KEY not found or invalid (env or /etc/secrets/PUB_KEY)');
     console.log('Checking env vars:', {
       STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY ? 'exists' : 'missing',
       PUB_KEY: process.env.PUB_KEY ? 'exists' : 'missing'
     });
   }
+  
   res.json({ publishableKey: key });
 });
 
