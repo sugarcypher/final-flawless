@@ -429,7 +429,10 @@
       let selectedDate = null;
       let stripe = null;
       let elements = null;
-
+      let currentMonth = new Date().getMonth();
+      let currentYear = new Date().getFullYear();
+      let bookedDatesCache = new Set();
+      
       // Helpers to avoid timezone shifts and build month views
       function ymd(date) {
         const y = date.getFullYear();
@@ -446,131 +449,93 @@
         return new Date(year, monthIndex + 1, 0).getDate();
       }
       
-      // Load calendar - API-backed with multi-month rendering
+      // Load calendar - single month with navigation
       function loadCalendar() {
         fetchCalendarFromAPI();
       }
       
-      async function fetchCalendarFromAPI() {
-        try {
-          // 6 months ahead (approx 180 days)
-          const response = await fetch('/api/availability?days=185');
-          
-          if (!response.ok) {
-            throw new Error(`API error: ${response.status}`);
-          }
-          
-          const data = await response.json();
-          
-          if (!calendar) {
-            console.error('Calendar element not found');
-            return;
-          }
-          
-          calendar.innerHTML = '';
-
-          const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                              'July', 'August', 'September', 'October', 'November', 'December'];
-          const now = new Date();
-          const bookedDates = new Set((data.days || []).filter(d => d.booked).map(d => d.date));
-          let firstAvailable = null;
-
-          // Render current month and next 5 months (total 6 months visible)
-          for (let offset = 0; offset < 6; offset++) {
-            const base = new Date(now.getFullYear(), now.getMonth() + offset, 1);
-            const year = base.getFullYear();
-            const monthIndex = base.getMonth();
-            const dim = daysInMonth(year, monthIndex);
-            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-            // Month header
-            const monthHeader = document.createElement('div');
-            monthHeader.className = 'calendar-month';
-            monthHeader.innerHTML = `<h4>${monthNames[monthIndex]} ${year}</h4>`;
-            calendar.appendChild(monthHeader);
-
-            // Day headers
-            const dayHeaders = document.createElement('div');
-            dayHeaders.className = 'calendar-day-headers';
-            dayHeaders.innerHTML = `
-              <div class="day-header">Mon</div>
-              <div class="day-header">Tue</div>
-              <div class="day-header">Wed</div>
-              <div class="day-header">Thu</div>
-              <div class="day-header">Fri</div>
-              <div class="day-header">Sat</div>
-            `;
-            calendar.appendChild(dayHeaders);
-
-            // Month grid
-            const calendarGrid = document.createElement('div');
-            calendarGrid.className = 'calendar-days';
-
-            for (let day = 1; day <= dim; day++) {
-              const d = new Date(year, monthIndex, day);
-              // Skip Sundays and any past dates in the current month
-              if (d.getDay() === 0) continue;
-              if (d < todayStart) continue;
-              const dateStr = ymd(d);
-              const isBooked = bookedDates.has(dateStr);
-              const dayElement = document.createElement('div');
-              if (isBooked) {
-                dayElement.className = 'calendar-day unavailable';
-                dayElement.style.cursor = 'not-allowed';
-                dayElement.textContent = String(day);
-              } else {
-                dayElement.className = 'calendar-day available';
-                dayElement.textContent = String(day);
-                dayElement.setAttribute('data-date', dateStr);
-                dayElement.style.cursor = 'pointer';
-                if (!firstAvailable) {
-                  firstAvailable = { date: dateStr, displayDate: humanFromYMD(dateStr) };
-                }
-                dayElement.addEventListener('click', function() {
-                  selectDate(dateStr, dayElement);
-                });
-              }
-              calendarGrid.appendChild(dayElement);
-            }
-
-            calendar.appendChild(calendarGrid);
-          }
-
-          nextSlot.innerHTML = firstAvailable
-            ? `<p><strong>Next Available:</strong> ${firstAvailable.displayDate}</p>`
-            : '<p>No available dates found in the next 6 months</p>';
-        } catch (error) {
-          console.error('Error loading calendar:', error);
-          if (calendar) {
-            calendar.innerHTML = `<div style="padding: 2rem; text-align: center; color: #666;">
-              <p style="margin: 0;">Error loading calendar: ${error.message}</p>
-              <button onclick="location.reload()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Retry</button>
-            </div>`;
-          }
-          if (nextSlot) {
-            nextSlot.innerHTML = '<p style="color: red;">Error loading calendar. Please refresh the page.</p>';
-          }
-        }
-      }
-      
-      // Render calendar without API
-      function renderCalendar() {
-        if (!calendar) {
-          console.error('Calendar element not found');
-          return;
-        }
+      function renderSingleMonth(year, monthIndex, bookedDates) {
+        if (!calendar) return;
+        
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                            'July', 'August', 'September', 'October', 'November', 'December'];
+        const now = new Date();
+        const dim = daysInMonth(year, monthIndex);
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const viewingStart = new Date(year, monthIndex, 1);
         
         calendar.innerHTML = '';
         
-        const today = new Date();
-        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                          'July', 'August', 'September', 'October', 'November', 'December'];
+        // Month navigation header
+        const navHeader = document.createElement('div');
+        navHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding: 8px;';
         
-        const monthHeader = document.createElement('div');
-        monthHeader.className = 'calendar-month';
-        monthHeader.innerHTML = `<h4>${monthNames[today.getMonth()]} ${today.getFullYear()}</h4>`;
-        calendar.appendChild(monthHeader);
+        // Build dropdown options for current month through 6 months ahead
+        const now = new Date();
+        const currentMonthIdx = now.getMonth();
+        const currentYearNum = now.getFullYear();
+        const options = [];
+        for (let offset = 0; offset < 6; offset++) {
+          const targetDate = new Date(currentYearNum, currentMonthIdx + offset, 1);
+          const optYear = targetDate.getFullYear();
+          const optMonth = targetDate.getMonth();
+          const optValue = `${optYear}-${optMonth}`;
+          const isSelected = optYear === year && optMonth === monthIndex;
+          options.push(`<option value="${optValue}" ${isSelected ? 'selected' : ''}>${monthNames[optMonth]} ${optYear}</option>`);
+        }
         
+        navHeader.innerHTML = `
+          <button id="prevMonth" style="padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; min-width: 44px;">‹</button>
+          <select id="monthSelect" style="padding: 8px 16px; font-size: 16px; font-weight: 600; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; flex: 1; max-width: 250px; margin: 0 8px;">
+            ${options.join('')}
+          </select>
+          <button id="nextMonth" style="padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; min-width: 44px;">›</button>
+        `;
+        calendar.appendChild(navHeader);
+        
+        // Add navigation handlers (use onclick to avoid duplicate listeners)
+        document.getElementById('prevMonth').onclick = () => {
+          const now = new Date();
+          const minMonth = now.getMonth();
+          const minYear = now.getFullYear();
+          const viewingDate = new Date(year, monthIndex, 1);
+          const minDate = new Date(minYear, minMonth, 1);
+          
+          if (viewingDate > minDate) {
+            if (monthIndex === 0) {
+              currentMonth = 11;
+              currentYear--;
+            } else {
+              currentMonth--;
+            }
+            renderSingleMonth(currentYear, currentMonth, bookedDatesCache);
+          }
+        };
+        
+        document.getElementById('nextMonth').onclick = () => {
+          const now = new Date();
+          const maxDate = new Date(now.getFullYear(), now.getMonth() + 5, 1);
+          const viewingDate = new Date(year, monthIndex, 1);
+          
+          if (viewingDate < maxDate) {
+            if (monthIndex === 11) {
+              currentMonth = 0;
+              currentYear++;
+            } else {
+              currentMonth++;
+            }
+            renderSingleMonth(currentYear, currentMonth, bookedDatesCache);
+          }
+        };
+        
+        document.getElementById('monthSelect').onchange = (e) => {
+          const [selYear, selMonth] = e.target.value.split('-').map(Number);
+          currentMonth = selMonth;
+          currentYear = selYear;
+          renderSingleMonth(currentYear, currentMonth, bookedDatesCache);
+        };
+        
+        // Day headers
         const dayHeaders = document.createElement('div');
         dayHeaders.className = 'calendar-day-headers';
         dayHeaders.innerHTML = `
@@ -583,37 +548,80 @@
         `;
         calendar.appendChild(dayHeaders);
         
+        // Month grid
         const calendarGrid = document.createElement('div');
         calendarGrid.className = 'calendar-days';
         
-        let firstAvailable = null;
-        const year = today.getFullYear();
-        const monthIndex = today.getMonth();
-        const dim = daysInMonth(year, monthIndex);
-        const todayStart = new Date(year, monthIndex, today.getDate()); // strip time
         for (let day = 1; day <= dim; day++) {
           const d = new Date(year, monthIndex, day);
-          // skip Sundays and any past dates in current month
-          if (d.getDay() === 0 || d < todayStart) continue;
+          // Skip Sundays and any past dates in the current month
+          if (d.getDay() === 0) continue;
+          if (viewingStart < todayStart && d < todayStart) continue;
           const dateStr = ymd(d);
+          const isBooked = bookedDates.has(dateStr);
           const dayElement = document.createElement('div');
-          dayElement.className = 'calendar-day available';
-          dayElement.textContent = String(day);
-          dayElement.setAttribute('data-date', dateStr);
-          dayElement.style.cursor = 'pointer';
-          if (!firstAvailable) {
-            firstAvailable = { date: dateStr, displayDate: humanFromYMD(dateStr) };
+          if (isBooked) {
+            dayElement.className = 'calendar-day unavailable';
+            dayElement.style.cursor = 'not-allowed';
+            dayElement.textContent = String(day);
+          } else {
+            dayElement.className = 'calendar-day available';
+            dayElement.textContent = String(day);
+            dayElement.setAttribute('data-date', dateStr);
+            dayElement.style.cursor = 'pointer';
+            dayElement.addEventListener('click', function() {
+              selectDate(dateStr, dayElement);
+            });
           }
-          dayElement.addEventListener('click', function() {
-            selectDate(dateStr, dayElement);
-          });
           calendarGrid.appendChild(dayElement);
         }
         
         calendar.appendChild(calendarGrid);
-        
-        if (nextSlot && firstAvailable) {
-          nextSlot.innerHTML = `<p><strong>Next Available:</strong> ${firstAvailable.displayDate}</p>`;
+      }
+      
+      async function fetchCalendarFromAPI() {
+        try {
+          // 6 months ahead (approx 180 days)
+          const response = await fetch('/api/availability?days=185');
+          
+          if (!response.ok) {
+            throw new Error(`API error: ${response.status}`);
+          }
+          
+          const data = await response.json();
+          bookedDatesCache = new Set((data.days || []).filter(d => d.booked).map(d => d.date));
+          
+          // Find first available date
+          const now = new Date();
+          let firstAvailable = null;
+          for (let i = 0; i < 185; i++) {
+            const d = new Date(now);
+            d.setDate(now.getDate() + i);
+            if (d.getDay() === 0) continue; // Skip Sundays
+            const dateStr = ymd(d);
+            if (!bookedDatesCache.has(dateStr)) {
+              firstAvailable = { date: dateStr, displayDate: humanFromYMD(dateStr) };
+              break;
+            }
+          }
+          
+          nextSlot.innerHTML = firstAvailable
+            ? `<p><strong>Next Available:</strong> ${firstAvailable.displayDate}</p>`
+            : '<p>No available dates found in the next 6 months</p>';
+          
+          // Render current month
+          renderSingleMonth(currentYear, currentMonth, bookedDatesCache);
+        } catch (error) {
+          console.error('Error loading calendar:', error);
+          if (calendar) {
+            calendar.innerHTML = `<div style="padding: 2rem; text-align: center; color: #666;">
+              <p style="margin: 0;">Error loading calendar: ${error.message}</p>
+              <button onclick="location.reload()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Retry</button>
+            </div>`;
+          }
+          if (nextSlot) {
+            nextSlot.innerHTML = '<p style="color: red;">Error loading calendar. Please refresh the page.</p>';
+          }
         }
       }
       
