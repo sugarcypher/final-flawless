@@ -12,9 +12,17 @@ const nodemailer = require('nodemailer');
 
 // Helper to read secrets from Render secret files or env vars
 function getSecret(name, renderFilename) {
-  // Try env var first
-  if (process.env[name]) return process.env[name].trim();
-  // Try Render secret file path
+  // Try env var first (standard naming)
+  if (process.env[name]) {
+    const val = String(process.env[name]).trim();
+    if (val) return val;
+  }
+  // Try Render secret file env var (Render exposes secret files as env vars with filename)
+  if (renderFilename && process.env[renderFilename]) {
+    const val = String(process.env[renderFilename]).trim();
+    if (val) return val;
+  }
+  // Try Render secret file path (fallback)
   if (renderFilename) {
     try {
       const secretPath = `/etc/secrets/${renderFilename}`;
@@ -30,17 +38,19 @@ function getSecret(name, renderFilename) {
 
 // Initialize Stripe with fallback for missing keys
 // Support both STRIPE_SECRET_KEY/SEC_KEY env vars and Render secret files
-const stripeSecretKey = getSecret('STRIPE_SECRET_KEY', 'SEC_KEY') || getSecret('SEC_KEY', 'SEC_KEY');
+const stripeSecretKey = getSecret('STRIPE_SECRET_KEY', 'SEC_KEY') || getSecret('SEC_KEY', null);
 const stripe = stripeSecretKey ? require('stripe')(stripeSecretKey) : null;
 if (!stripe) {
   console.warn('⚠️  STRIPE_SECRET_KEY/SEC_KEY not found (env or /etc/secrets/SEC_KEY) - payment features will be disabled');
+  console.log('Available env vars:', Object.keys(process.env).filter(k => k.includes('SEC') || k.includes('STRIPE')).join(', ') || 'none');
 } else {
   console.log('✓ Stripe initialized with secret key');
 }
 // Support both STRIPE_PUBLISHABLE_KEY/PUB_KEY env vars and Render secret files
-const stripePublishableKey = getSecret('STRIPE_PUBLISHABLE_KEY', 'PUB_KEY') || getSecret('PUB_KEY', 'PUB_KEY');
+const stripePublishableKey = getSecret('STRIPE_PUBLISHABLE_KEY', 'PUB_KEY') || getSecret('PUB_KEY', null);
 if (!stripePublishableKey) {
   console.warn('⚠️  STRIPE_PUBLISHABLE_KEY/PUB_KEY not found (env or /etc/secrets/PUB_KEY) - payment button will show as not configured');
+  console.log('Available env vars:', Object.keys(process.env).filter(k => k.includes('PUB') || k.includes('STRIPE')).join(', ') || 'none');
 } else {
   console.log('✓ Stripe publishable key available');
 }
@@ -483,9 +493,13 @@ app.post('/api/book-cash', async (req, res) => {
 // ── API: get Stripe publishable key ───────────────────────────────────────────
 app.get('/api/stripe-key', (_, res) => {
   // Support both STRIPE_PUBLISHABLE_KEY/PUB_KEY env vars and Render secret files
-  const key = getSecret('STRIPE_PUBLISHABLE_KEY', 'PUB_KEY') || getSecret('PUB_KEY', 'PUB_KEY') || '';
+  const key = getSecret('STRIPE_PUBLISHABLE_KEY', 'PUB_KEY') || getSecret('PUB_KEY', null) || '';
   if (!key) {
     console.warn('STRIPE_PUBLISHABLE_KEY/PUB_KEY not found (env or /etc/secrets/PUB_KEY)');
+    console.log('Checking env vars:', {
+      STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY ? 'exists' : 'missing',
+      PUB_KEY: process.env.PUB_KEY ? 'exists' : 'missing'
+    });
   }
   res.json({ publishableKey: key });
 });

@@ -704,17 +704,17 @@
           // Get Stripe publishable key
           const keyResponse = await fetch('/api/stripe-key');
           const keyData = await keyResponse.json();
-          const publishableKey = keyData?.publishableKey || '';
+          let publishableKey = (keyData?.publishableKey || '').trim();
           
-          if (!publishableKey || typeof publishableKey !== 'string' || publishableKey.trim().length === 0) {
+          if (!publishableKey || typeof publishableKey !== 'string' || publishableKey.length === 0) {
             console.error('Stripe publishable key missing or empty. Response:', keyData);
-            alert('Payment system not configured. Please contact us directly.');
+            alert('Payment system not configured. The Stripe publishable key is missing. Please check Render environment variables.');
             return;
           }
           
           if (!publishableKey.startsWith('pk_')) {
-            console.error('Invalid Stripe publishable key format (should start with pk_):', publishableKey.substring(0, 10) + '...');
-            alert('Payment system configuration error. Please contact us directly.');
+            console.error('Invalid Stripe publishable key format (should start with pk_):', publishableKey.substring(0, Math.min(50, publishableKey.length)) + '...');
+            alert('Payment system configuration error. The Stripe publishable key format is invalid. Expected format: pk_test_... or pk_live_...\n\nReceived: ' + publishableKey.substring(0, 20) + '...');
             return;
           }
           
