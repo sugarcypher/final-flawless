@@ -451,6 +451,11 @@
       
       // Load calendar - single month with navigation
       function loadCalendar() {
+        if (!calendar) {
+          console.error('Calendar element not found');
+          return;
+        }
+        console.log('Loading calendar...');
         fetchCalendarFromAPI();
       }
       
@@ -471,7 +476,6 @@
         navHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding: 8px;';
         
         // Build dropdown options for current month through 6 months ahead
-        const now = new Date();
         const currentMonthIdx = now.getMonth();
         const currentYearNum = now.getFullYear();
         const options = [];
@@ -569,7 +573,9 @@
             dayElement.textContent = String(day);
             dayElement.setAttribute('data-date', dateStr);
             dayElement.style.cursor = 'pointer';
-            dayElement.addEventListener('click', function() {
+            dayElement.addEventListener('click', function(e) {
+              e.preventDefault();
+              e.stopPropagation();
               selectDate(dateStr, dayElement);
             });
           }
@@ -610,6 +616,7 @@
             : '<p>No available dates found in the next 6 months</p>';
           
           // Render current month
+          console.log('Rendering calendar for', currentYear, currentMonth, 'with', bookedDatesCache.size, 'booked dates');
           renderSingleMonth(currentYear, currentMonth, bookedDatesCache);
         } catch (error) {
           console.error('Error loading calendar:', error);
