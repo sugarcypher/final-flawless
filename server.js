@@ -10,14 +10,18 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const nodemailer = require('nodemailer');
 // Initialize Stripe with fallback for missing keys
-const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
+// Support both STRIPE_SECRET_KEY and SEC_KEY (Render secrets naming)
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY || process.env.SEC_KEY;
+const stripe = stripeSecretKey ? require('stripe')(stripeSecretKey) : null;
 if (!stripe) {
-  console.warn('⚠️  STRIPE_SECRET_KEY not found - payment features will be disabled');
+  console.warn('⚠️  STRIPE_SECRET_KEY/SEC_KEY not found - payment features will be disabled');
 } else {
   console.log('✓ Stripe initialized with secret key');
 }
-if (!process.env.STRIPE_PUBLISHABLE_KEY) {
-  console.warn('⚠️  STRIPE_PUBLISHABLE_KEY not found - payment button will show as not configured');
+// Support both STRIPE_PUBLISHABLE_KEY and PUB_KEY (Render secrets naming)
+const stripePublishableKey = process.env.STRIPE_PUBLISHABLE_KEY || process.env.PUB_KEY;
+if (!stripePublishableKey) {
+  console.warn('⚠️  STRIPE_PUBLISHABLE_KEY/PUB_KEY not found - payment button will show as not configured');
 } else {
   console.log('✓ Stripe publishable key available');
 }
@@ -446,9 +450,10 @@ app.post('/api/book-cash', async (req, res) => {
 
 // ── API: get Stripe publishable key ───────────────────────────────────────────
 app.get('/api/stripe-key', (_, res) => {
-  const key = process.env.STRIPE_PUBLISHABLE_KEY || process.env.STRIPE_PUBLISHABLE_KEY_TEST || '';
+  // Support both STRIPE_PUBLISHABLE_KEY and PUB_KEY (Render secrets naming)
+  const key = process.env.STRIPE_PUBLISHABLE_KEY || process.env.PUB_KEY || '';
   if (!key) {
-    console.warn('STRIPE_PUBLISHABLE_KEY not found in environment variables');
+    console.warn('STRIPE_PUBLISHABLE_KEY/PUB_KEY not found in environment variables');
   }
   res.json({ publishableKey: key });
 });
