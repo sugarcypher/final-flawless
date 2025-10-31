@@ -326,6 +326,15 @@
               <!-- Calendar will be populated by JavaScript -->
             </div>
             <div id="selectedDate" class="selected-date-display"></div>
+            <div id="timeSlotContainer" style="display: none; margin-top: 16px;">
+              <label for="timeSlot" style="display: block; margin-bottom: 8px; font-weight: 600;">Select Time Slot</label>
+              <select id="timeSlot" name="timeSlot" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                <option value="">Choose a time...</option>
+                <option value="morning">Morning (8:00 AM - 12:00 PM)</option>
+                <option value="afternoon">Afternoon (12:00 PM - 5:00 PM)</option>
+                <option value="evening">Evening (5:00 PM - 8:00 PM)</option>
+              </select>
+            </div>
             <div id="nextSlot" class="text-center mb-20"></div>
           </div>
 
@@ -627,6 +636,12 @@
         if (selectedDateDisplay) {
           selectedDateDisplay.textContent = `Selected: ${humanFromYMD(date)}`;
         }
+        
+        // Show time slot selector
+        const timeSlotContainer = document.getElementById('timeSlotContainer');
+        if (timeSlotContainer) {
+          timeSlotContainer.style.display = 'block';
+        }
       }
       
       // Cash booking handler
@@ -638,6 +653,7 @@
             date: selectedDate,
             name: document.getElementById('customerName').value,
             phone: document.getElementById('customerPhone').value,
+            timeSlot: document.getElementById('timeSlot').value,
             vehicleYear: document.getElementById('vehicleYear').value,
             vehicleMake: document.getElementById('vehicleMake').value,
             vehicleModel: document.getElementById('vehicleModel').value,
@@ -671,7 +687,8 @@
         }
       });
       
-      // Card booking handler
+      // Card booking handler - prevent duplicate listeners
+      let paymentHandlerAttached = false;
       cardBooking.addEventListener('click', async function() {
         if (!validateForm()) return;
         
@@ -708,6 +725,7 @@
             date: selectedDate,
             name: document.getElementById('customerName').value,
             phone: document.getElementById('customerPhone').value,
+            timeSlot: document.getElementById('timeSlot').value,
             vehicleYear: document.getElementById('vehicleYear').value,
             vehicleMake: document.getElementById('vehicleMake').value,
             vehicleModel: document.getElementById('vehicleModel').value,
@@ -716,11 +734,18 @@
             serviceLevel: document.getElementById('serviceLevel').value
           };
 
-          // Persist minimal booking info for post-redirect confirmation
+          // Persist booking info for post-redirect confirmation
           localStorage.setItem('ff_booking', JSON.stringify({
             date: formData.date,
             name: formData.name,
-            phone: formData.phone
+            phone: formData.phone,
+            timeSlot: formData.timeSlot,
+            vehicleYear: formData.vehicleYear,
+            vehicleMake: formData.vehicleMake,
+            vehicleModel: formData.vehicleModel,
+            vehicleTrim: formData.vehicleTrim,
+            vehicleColor: formData.vehicleColor,
+            serviceLevel: formData.serviceLevel
           }));
           
           const response = await fetch('/api/create-payment-intent', {
@@ -732,6 +757,12 @@
           const result = await response.json();
           
           if (result.success) {
+            // Clear and remount payment element if it exists
+            const paymentElementContainer = document.getElementById('payment-element');
+            if (paymentElementContainer) {
+              paymentElementContainer.innerHTML = '';
+            }
+            
             // Initialize Stripe Elements
             elements = stripe.elements({ clientSecret: result.clientSecret });
             
@@ -740,63 +771,69 @@
             
             paymentForm.style.display = 'block';
             
-            // Handle form submission
-            bookingForm.addEventListener('submit', async function(e) {
-              e.preventDefault();
-              
-              const { error, paymentIntent } = await stripe.confirmPayment({
-                elements,
-                confirmParams: {
-                  return_url: window.location.href
-                }
-              });
-              
-              if (error) {
-                alert('Payment failed: ' + error.message);
-                return;
-              }
-
-              // Some payments succeed immediately without redirect
-              if (paymentIntent && paymentIntent.status === 'succeeded') {
-                try {
-                  const bookingStored = JSON.parse(localStorage.getItem('ff_booking') || '{}');
-                  const confirmRes = await fetch('/api/confirm-payment', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      paymentIntentId: paymentIntent.id,
-                      date: bookingStored.date || formData.date,
-                      name: bookingStored.name || formData.name,
-                      phone: bookingStored.phone || formData.phone,
-                      vehicleYear: formData.vehicleYear,
-                      vehicleMake: formData.vehicleMake,
-                      vehicleModel: formData.vehicleModel,
-                      vehicleTrim: formData.vehicleTrim,
-                      vehicleColor: formData.vehicleColor,
-                      serviceLevel: formData.serviceLevel
-                    })
-                  });
-                  const confirmJson = await confirmRes.json();
-                  if (!confirmJson.success) {
-                    alert('Booking confirmation failed: ' + (confirmJson.message || 'Unknown error'));
-                    return;
+            // Handle form submission - prevent duplicate listeners
+            if (!paymentHandlerAttached) {
+              bookingForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const { error, paymentIntent } = await stripe.confirmPayment({
+                  elements,
+                  confirmParams: {
+                    return_url: window.location.href
                   }
-                } catch (e) {
-                  console.error(e);
-                  alert('Booking confirmation failed. Please contact us.');
+                });
+                
+                if (error) {
+                  alert('Payment failed: ' + error.message);
                   return;
                 }
 
-                alert('Thanks for booking! If you don\'t hear from Jason in the next hour, give him a call!');
-                bookingForm.reset();
-                paymentForm.style.display = 'none';
-                selectedDate = null;
-                document.querySelectorAll('.calendar-day').forEach(day => {
-                  day.classList.remove('selected');
-                });
-                localStorage.removeItem('ff_booking');
-              }
-            });
+                // Some payments succeed immediately without redirect
+                if (paymentIntent && paymentIntent.status === 'succeeded') {
+                  try {
+                    const bookingStored = JSON.parse(localStorage.getItem('ff_booking') || '{}');
+                    const confirmRes = await fetch('/api/confirm-payment', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        paymentIntentId: paymentIntent.id,
+                        date: bookingStored.date || formData.date,
+                        name: bookingStored.name || formData.name,
+                        phone: bookingStored.phone || formData.phone,
+                        timeSlot: bookingStored.timeSlot || formData.timeSlot,
+                        vehicleYear: bookingStored.vehicleYear || formData.vehicleYear,
+                        vehicleMake: bookingStored.vehicleMake || formData.vehicleMake,
+                        vehicleModel: bookingStored.vehicleModel || formData.vehicleModel,
+                        vehicleTrim: bookingStored.vehicleTrim || formData.vehicleTrim,
+                        vehicleColor: bookingStored.vehicleColor || formData.vehicleColor,
+                        serviceLevel: bookingStored.serviceLevel || formData.serviceLevel
+                      })
+                    });
+                    const confirmJson = await confirmRes.json();
+                    if (!confirmJson.success) {
+                      alert('Booking confirmation failed: ' + (confirmJson.message || 'Unknown error'));
+                      return;
+                    }
+                  } catch (e) {
+                    console.error(e);
+                    alert('Booking confirmation failed. Please contact us.');
+                    return;
+                  }
+
+                  alert('Thanks for booking! If you don\'t hear from Jason in the next hour, give him a call!');
+                  bookingForm.reset();
+                  paymentForm.style.display = 'none';
+                  selectedDate = null;
+                  document.querySelectorAll('.calendar-day').forEach(day => {
+                    day.classList.remove('selected');
+                  });
+                  const timeSlotContainer = document.getElementById('timeSlotContainer');
+                  if (timeSlotContainer) timeSlotContainer.style.display = 'none';
+                  localStorage.removeItem('ff_booking');
+                }
+              });
+              paymentHandlerAttached = true;
+            }
           } else {
             alert('Payment setup failed: ' + (result.message || 'Unknown error'));
           }
@@ -815,6 +852,7 @@
         const vehicleModel = document.getElementById('vehicleModel').value;
         const vehicleColor = document.getElementById('vehicleColor').value;
         const serviceLevel = document.getElementById('serviceLevel').value;
+        const timeSlot = document.getElementById('timeSlot')?.value || '';
         
         if (!name || !phone || !vehicleYear || !vehicleMake || !vehicleModel || !vehicleColor || !serviceLevel) {
           alert('Please fill in all required fields.');
@@ -823,6 +861,11 @@
         
         if (!selectedDate) {
           alert('Please select a date for your appointment.');
+          return false;
+        }
+        
+        if (!timeSlot) {
+          alert('Please select a time slot for your appointment.');
           return false;
         }
         
@@ -849,12 +892,13 @@
                   date: bookingStored.date,
                   name: bookingStored.name,
                   phone: bookingStored.phone,
-                  vehicleYear: document.getElementById('vehicleYear').value,
-                  vehicleMake: document.getElementById('vehicleMake').value,
-                  vehicleModel: document.getElementById('vehicleModel').value,
-                  vehicleTrim: document.getElementById('vehicleTrim').value,
-                  vehicleColor: document.getElementById('vehicleColor').value,
-                  serviceLevel: document.getElementById('serviceLevel').value
+                  timeSlot: bookingStored.timeSlot,
+                  vehicleYear: bookingStored.vehicleYear,
+                  vehicleMake: bookingStored.vehicleMake,
+                  vehicleModel: bookingStored.vehicleModel,
+                  vehicleTrim: bookingStored.vehicleTrim,
+                  vehicleColor: bookingStored.vehicleColor,
+                  serviceLevel: bookingStored.serviceLevel
                 })
               });
               const confirmJson = await confirmRes.json();

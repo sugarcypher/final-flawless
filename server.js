@@ -189,7 +189,7 @@ async function sendEmailNotification(bookingData) {
   }
   
   try {
-    const { customerName, customerPhone, customerEmail, selectedDate, vehicleInfo, depositAmount, serviceLevel } = bookingData;
+    const { customerName, customerPhone, customerEmail, selectedDate, timeSlot, vehicleInfo, depositAmount, serviceLevel } = bookingData;
     
     const mailOptions = {
       from: `"Flawless Finish Website" <${process.env.EMAIL_USER}>`,
@@ -218,6 +218,10 @@ async function sendEmailNotification(bookingData) {
               <tr>
                 <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold;">Date:</td>
                 <td style="padding: 10px; border-bottom: 1px solid #ddd;">${escapeHtml(selectedDate)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold;">Time Slot:</td>
+                <td style="padding: 10px; border-bottom: 1px solid #ddd;">${escapeHtml(timeSlot ? timeSlot.charAt(0).toUpperCase() + timeSlot.slice(1) : 'Not specified')}</td>
               </tr>
               <tr>
                 <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold;">Vehicle:</td>
@@ -328,7 +332,7 @@ app.post('/api/confirm-payment', async (req, res) => {
       });
     }
 
-    const { paymentIntentId, date, name, phone, vehicleYear, vehicleMake, vehicleModel, vehicleTrim, vehicleColor, serviceLevel } = req.body || {};
+    const { paymentIntentId, date, name, phone, timeSlot, vehicleYear, vehicleMake, vehicleModel, vehicleTrim, vehicleColor, serviceLevel } = req.body || {};
     
     if (!paymentIntentId || !date) {
       return res.status(400).json({ success: false, message: 'Missing payment or date information.' });
@@ -371,6 +375,7 @@ app.post('/api/confirm-payment', async (req, res) => {
       customerPhone: sanitizedPhone || 'N/A',
       customerEmail: 'Not provided',
       selectedDate: humanDate,
+      timeSlot: timeSlot || 'Not specified',
       vehicleInfo: vehicleSummary || 'Not specified',
       serviceLevel: serviceLevel || 'Not specified',
       depositAmount: 25000,
@@ -393,7 +398,7 @@ app.post('/api/confirm-payment', async (req, res) => {
 
 // ── API: book cash reservation ────────────────────────────────────────────────
 app.post('/api/book-cash', async (req, res) => {
-  let { date, name, phone, vehicleYear, vehicleMake, vehicleModel, vehicleTrim, vehicleColor, serviceLevel } = req.body || {};
+  let { date, name, phone, timeSlot, vehicleYear, vehicleMake, vehicleModel, vehicleTrim, vehicleColor, serviceLevel } = req.body || {};
   if (!date) return res.status(400).json({ success: false, message: 'Please select a date.' });
   if (!name || name.trim().length === 0) return res.status(400).json({ success: false, message: 'Please enter your name.' });
   if (!phone || phone.trim().length === 0) return res.status(400).json({ success: false, message: 'Please enter your phone number.' });
@@ -428,6 +433,7 @@ app.post('/api/book-cash', async (req, res) => {
     customerPhone: sanitizedPhone || 'N/A',
     customerEmail: 'Not provided',
     selectedDate: humanDate,
+    timeSlot: timeSlot || 'Not specified',
     vehicleInfo: vehicleSummary || 'Not specified',
     serviceLevel: serviceLevel || 'Not specified',
     depositAmount: 0,
