@@ -233,7 +233,19 @@ const emailConfig = {
 };
 
 const transporter = nodemailer.createTransport(emailConfig);
-const jasonEmail = 'j@flawlessfini.sh';
+// Support multiple recipient emails (comma-separated) via ADMIN_EMAIL env var, fallback to default
+const recipientEmails = process.env.ADMIN_EMAIL 
+  ? process.env.ADMIN_EMAIL.split(',').map(e => e.trim()).filter(Boolean)
+  : ['j@flawlessfini.sh'];
+
+// Log email configuration at startup
+if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+  console.log('✓ Email service configured');
+  console.log('  Recipient emails:', recipientEmails.join(', '));
+  console.log('  From:', process.env.EMAIL_USER);
+} else {
+  console.warn('⚠️  Email service not configured (EMAIL_USER/EMAIL_PASS missing)');
+}
 
 async function sendEmailNotification(bookingData) {
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
@@ -244,9 +256,12 @@ async function sendEmailNotification(bookingData) {
   try {
     const { customerName, customerPhone, customerEmail, selectedDate, timeSlot, vehicleInfo, depositAmount, serviceLevel } = bookingData;
     
+    console.log('Sending booking notification email to:', recipientEmails.join(', '));
+    console.log('Customer info:', { name: customerName, phone: customerPhone, date: selectedDate, timeSlot, vehicle: vehicleInfo, service: serviceLevel });
+    
     const mailOptions = {
       from: `"Flawless Finish Website" <${process.env.EMAIL_USER}>`,
-      to: jasonEmail,
+      to: recipientEmails.join(', '), // Support multiple recipients
       subject: `New Booking - ${customerName} - ${selectedDate}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -320,7 +335,8 @@ async function sendEmailNotification(bookingData) {
       timeoutPromise
     ]);
     
-    console.log('Email sent:', info.messageId);
+    console.log('✅ Email sent successfully to:', recipientEmails.join(', '));
+    console.log('Email message ID:', info.messageId);
   } catch (err) {
     console.error('Email error:', err?.message || err);
     // Don't block booking - email failure shouldn't prevent booking completion
