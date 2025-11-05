@@ -703,6 +703,10 @@
             document.querySelectorAll('.calendar-day').forEach(day => {
               day.classList.remove('selected');
             });
+            const timeSlotContainer = document.getElementById('timeSlotContainer');
+            if (timeSlotContainer) timeSlotContainer.style.display = 'none';
+            // Reload calendar to show the booked date as unavailable
+            await fetchCalendarFromAPI();
           } else {
             alert('Booking failed: ' + (result.message || 'Unknown error'));
           }
@@ -855,6 +859,9 @@
                   const timeSlotContainer = document.getElementById('timeSlotContainer');
                   if (timeSlotContainer) timeSlotContainer.style.display = 'none';
                   localStorage.removeItem('ff_booking');
+                  
+                  // Reload calendar to show the booked date as unavailable
+                  await fetchCalendarFromAPI();
                 }
               });
               paymentHandlerAttached = true;
@@ -932,6 +939,8 @@
                 localStorage.removeItem('ff_booking');
                 // Clean URL params
                 window.history.replaceState({}, document.title, window.location.pathname);
+                // Reload calendar to show the booked date as unavailable
+                await fetchCalendarFromAPI();
               } else {
                 alert('Booking confirmation failed: ' + (confirmJson.message || 'Unknown error'));
               }
