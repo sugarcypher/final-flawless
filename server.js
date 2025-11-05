@@ -525,25 +525,71 @@ app.post('/api/book-cash', async (req, res) => {
 
 // ── API: get Stripe publishable key ───────────────────────────────────────────
 app.get('/api/stripe-key', (_, res) => {
-  // Support both STRIPE_PUBLISHABLE_KEY/PUB_KEY env vars and Render secret files
+  // Comprehensive diagnostic logging
+  console.log('=== Stripe Key Retrieval Diagnostics ===');
+  
+  // Check all possible env var names
+  const possibleEnvVars = [
+    'STRIPE_PUBLISHABLE_KEY',
+    'PUB_KEY',
+    'STRIPE_PUB_KEY',
+    'STRIPE_PUBLISHABLE',
+    'PUBLISHABLE_KEY'
+  ];
+  
+  const envVarStatus = {};
+  for (const varName of possibleEnvVars) {
+    const value = process.env[varName];
+    if (value) {
+      envVarStatus[varName] = `exists (length: ${value.length}, starts with: ${value.substring(0, 10)}...)`;
+    } else {
+      envVarStatus[varName] = 'missing';
+    }
+  }
+  console.log('Environment variables check:', envVarStatus);
+  
+  // Check secret files
+  const secretFilePaths = ['/etc/secrets/PUB_KEY', '/etc/secrets/STRIPE_PUBLISHABLE_KEY'];
+  for (const filePath of secretFilePaths) {
+    try {
+      if (fs.existsSync(filePath)) {
+        const content = fs.readFileSync(filePath, 'utf8').trim();
+        console.log(`Secret file ${filePath}: exists (length: ${content.length}, starts with: ${content.substring(0, 10)}...)`);
+      } else {
+        console.log(`Secret file ${filePath}: not found`);
+      }
+    } catch (e) {
+      console.log(`Secret file ${filePath}: error reading - ${e.message}`);
+    }
+  }
+  
+  // Try to get the key using getSecret
   let key = getSecret('STRIPE_PUBLISHABLE_KEY', 'PUB_KEY') || getSecret('PUB_KEY', null) || '';
+  
+  if (!key) {
+    // Try direct env var access as fallback
+    key = process.env.STRIPE_PUBLISHABLE_KEY || process.env.PUB_KEY || '';
+  }
   
   // Validate key format - must start with pk_test_ or pk_live_
   if (key && !key.startsWith('pk_')) {
     console.error('❌ Invalid Stripe publishable key format in API response');
     console.error('Key should start with "pk_test_" or "pk_live_"');
     console.error('Received key starts with:', key.substring(0, 20) + '...');
+    console.error('Key length:', key.length);
     console.error('Returning empty key to prevent frontend errors');
     key = ''; // Return empty to trigger proper error handling on frontend
   }
   
   if (!key) {
-    console.warn('STRIPE_PUBLISHABLE_KEY/PUB_KEY not found or invalid (env or /etc/secrets/PUB_KEY)');
-    console.log('Checking env vars:', {
-      STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY ? 'exists' : 'missing',
-      PUB_KEY: process.env.PUB_KEY ? 'exists' : 'missing'
-    });
+    console.warn('⚠️ STRIPE_PUBLISHABLE_KEY/PUB_KEY not found or invalid');
+    console.warn('Please check Render environment variables or secret files');
+    console.warn('Expected: PUB_KEY or STRIPE_PUBLISHABLE_KEY containing a key starting with pk_test_ or pk_live_');
+  } else {
+    console.log('✓ Stripe publishable key found and valid');
   }
+  
+  console.log('=== End Diagnostics ===');
   
   res.json({ publishableKey: key });
 });
