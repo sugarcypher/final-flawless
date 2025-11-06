@@ -29,7 +29,7 @@ body {
 
 /* Header and Hero Section */
 .hero {
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  background: #000000;
   color: white;
   padding: 80px 0;
   text-align: center;
@@ -114,14 +114,15 @@ body {
 }
 
 .button.secondary {
-  background: transparent;
+  background: #6c757d;
   color: white;
-  border: 2px solid white;
+  border: 2px solid #6c757d;
 }
 
 .button.secondary:hover {
-  background: white;
-  color: #333;
+  background: #5a6268;
+  border-color: #5a6268;
+  color: white;
 }
 
 /* Card Styles */
@@ -405,126 +406,6 @@ body {
   margin-bottom: 50px;
 }
 
-.pricing-note {
-  text-align: center;
-  margin-top: 30px;
-  padding: 30px;
-  background: #f8f9fa;
-  border-radius: 12px;
-  border-left: 4px solid #007bff;
-}
-
-.pricing-note p {
-  margin-bottom: 15px;
-  color: #333;
-  font-size: 1.1rem;
-  font-weight: 500;
-}
-
-.pricing-note p:last-child {
-  margin-bottom: 0;
-}
-
-/* Process Section */
-.process-section {
-  background: #f8f9fa;
-}
-
-.process-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 30px;
-  margin-top: 50px;
-}
-
-.process-step {
-  background: white;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-  text-align: center;
-  position: relative;
-}
-
-.step-number {
-  display: inline-block;
-  width: 50px;
-  height: 50px;
-  background: #007bff;
-  color: white;
-  border-radius: 50%;
-  line-height: 50px;
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 20px;
-}
-
-.process-step h3 {
-  color: #333;
-  margin-bottom: 15px;
-  font-size: 1.3rem;
-}
-
-.process-step p {
-  color: #666;
-  line-height: 1.6;
-}
-
-/* How to Book Section */
-.how-to-book-section {
-  background: #f8f9fa;
-  padding: 80px 0;
-}
-
-.how-to-steps {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 30px;
-  margin-top: 50px;
-}
-
-.how-to-steps .step {
-  background: white;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-  text-align: center;
-  position: relative;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.how-to-steps .step:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-}
-
-.how-to-steps .step-number {
-  display: inline-block;
-  width: 60px;
-  height: 60px;
-  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-  color: white;
-  border-radius: 50%;
-  line-height: 60px;
-  font-size: 1.8rem;
-  font-weight: 700;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
-}
-
-.how-to-steps .step h3 {
-  color: #333;
-  margin-bottom: 15px;
-  font-size: 1.3rem;
-  font-weight: 600;
-}
-
-.how-to-steps .step p {
-  color: #666;
-  line-height: 1.6;
-  font-size: 1rem;
-}
-
 .pricing-card {
   background: white;
   padding: 40px 30px;
@@ -596,136 +477,6 @@ body {
   color: #666;
 }
 
-/* Booking Section */
-.booking-section {
-  background: #f8f9fa;
-  padding: 80px 0;
-}
-
-.booking-container {
-  max-width: 800px;
-  margin: 0 auto;
-  background: white;
-  padding: 40px;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-}
-
-.booking-container h2 {
-  text-align: center;
-  margin-bottom: 30px;
-  color: #333;
-}
-
-.calendar-container {
-  margin-bottom: 30px;
-}
-
-.calendar-container h3 {
-  margin-bottom: 20px;
-  color: #333;
-}
-
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.calendar-day {
-  padding: 15px;
-  text-align: center;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  background: white;
-  font-size: 0.9rem;
-}
-
-.calendar-day:hover {
-  background: #f8f9fa;
-  border-color: #007bff;
-}
-
-.calendar-day.selected {
-  background: #007bff;
-  color: white;
-  border-color: #007bff;
-}
-
-.calendar-day.booked {
-  background: #dc3545;
-  color: white;
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
-.booking-form {
-  display: grid;
-  gap: 20px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-}
-
-.form-group label {
-  margin-bottom: 5px;
-  font-weight: 600;
-  color: #333;
-}
-
-.form-group input,
-.form-group select {
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: border-color 0.3s ease;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
-}
-
-.payment-section {
-  margin-top: 30px;
-  padding: 20px;
-  background: #f8f9fa;
-  border-radius: 8px;
-}
-
-.payment-section h3 {
-  margin-bottom: 15px;
-  color: #333;
-}
-
-.payment-options {
-  display: flex;
-  gap: 15px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
-
-.payment-options button {
-  flex: 1;
-  min-width: 200px;
-}
-
-#payment-element {
-  margin: 20px 0;
-  padding: 20px;
-  background: white;
-  border-radius: 8px;
-  border: 1px solid #ddd;
-}
-
 /* Footer */
 footer {
   background: #1a1a1a;
@@ -751,6 +502,104 @@ footer a {
 
 footer a:hover {
   text-decoration: underline;
+}
+
+/* Calendar Styles */
+.calendar-container {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.calendar-month h4 {
+  text-align: center;
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.calendar-day-headers {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.day-header {
+  text-align: center;
+  font-weight: 600;
+  color: #666;
+  padding: 0.5rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.5rem;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  background: white;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.calendar-day.available {
+  background: #e8f5e8;
+  border-color: #28a745;
+  color: #155724;
+}
+
+.calendar-day.available:hover {
+  background: #d4edda;
+  border-color: #1e7e34;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.calendar-day.selected {
+  background: #007bff;
+  border-color: #0056b3;
+  color: white;
+  transform: scale(1.05);
+  box-shadow: 0 4px 16px rgba(0, 123, 255, 0.4);
+}
+
+.calendar-day.unavailable {
+  background: #f8f9fa;
+  border-color: #dee2e6;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+.calendar-day.past {
+  background: #f8f9fa;
+  border-color: #dee2e6;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+.selected-date-display {
+  text-align: center;
+  margin: 1rem 0;
+  padding: 1rem;
+  background: #e3f2fd;
+  border-radius: 8px;
+  color: #1976d2;
+  font-weight: 600;
+  font-size: 1.1rem;
 }
 
 /* Responsive Design */
@@ -871,4 +720,74 @@ footer a:hover {
 
 .mt-40 {
   margin-top: 40px;
+}
+
+/* Process Section */
+.process-section {
+    background-color: var(--color-light);
+    color: var(--color-text-dark);
+    text-align: center;
+}
+
+body.dark .process-section {
+    background-color: #222;
+    color: var(--color-text-light);
+}
+
+.process-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 3rem;
+}
+
+.process-step {
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+body.dark .process-step {
+    background-color: #333;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.process-step:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+.step-number {
+    display: inline-block;
+    width: 50px;
+    height: 50px;
+    background-color: var(--color-primary);
+    color: #fff;
+    border-radius: 50%;
+    line-height: 50px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.process-step h3 {
+    color: var(--color-dark);
+    margin-bottom: 0.5rem;
+    font-size: 1.4rem;
+}
+
+body.dark .process-step h3 {
+    color: var(--color-light);
+}
+
+.process-step p {
+    color: var(--color-secondary);
+    line-height: 1.6;
+}
+
+body.dark .process-step p {
+    color: #bbb;
 }

@@ -1,53 +1,183 @@
-// server.js — Improved v6 with better API structure and validation
+// server.js — v5 Stripe + Email integration
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
 const compression = require('compression');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const nodemailer = require('nodemailer');
+
+// Helper to read secrets from Render secret files or env vars
+function getSecret(name, renderFilename) {
+  // Try env var first (standard naming)
+  if (process.env[name]) {
+    const val = String(process.env[name]).trim();
+    if (val) return val;
+  }
+  // Try Render secret file env var (Render exposes secret files as env vars with filename)
+  if (renderFilename && process.env[renderFilename]) {
+    const val = String(process.env[renderFilename]).trim();
+    if (val) return val;
+  }
+  // Try Render secret file path (fallback)
+  if (renderFilename) {
+    try {
+      const secretPath = `/etc/secrets/${renderFilename}`;
+      if (fs.existsSync(secretPath)) {
+        return fs.readFileSync(secretPath, 'utf8').trim();
+      }
+    } catch (e) {
+      // File doesn't exist or can't read
+    }
+  }
+  return null;
+}
+
 // Initialize Stripe with fallback for missing keys
-const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
+// Support both STRIPE_SECRET_KEY/SEC_KEY env vars and Render secret files
+const stripeSecretKey = getSecret('STRIPE_SECRET_KEY', 'SEC_KEY') || getSecret('SEC_KEY', null);
+const stripe = stripeSecretKey ? require('stripe')(stripeSecretKey) : null;
+if (!stripe) {
+  console.warn('⚠️  STRIPE_SECRET_KEY/SEC_KEY not found (env or /etc/secrets/SEC_KEY) - payment features will be disabled');
+  console.log('Available env vars:', Object.keys(process.env).filter(k => k.includes('SEC') || k.includes('STRIPE')).join(', ') || 'none');
+} else {
+  console.log('✓ Stripe initialized with secret key');
+}
+// Support both STRIPE_PUBLISHABLE_KEY/PUB_KEY env vars and Render secret files
+const stripePublishableKey = getSecret('STRIPE_PUBLISHABLE_KEY', 'PUB_KEY') || getSecret('PUB_KEY', null);
+if (!stripePublishableKey) {
+  console.warn('⚠️  STRIPE_PUBLISHABLE_KEY/PUB_KEY not found (env or /etc/secrets/PUB_KEY) - payment button will show as not configured');
+  console.log('Available env vars:', Object.keys(process.env).filter(k => k.includes('PUB') || k.includes('STRIPE')).join(', ') || 'none');
+} else {
+  // Validate key format
+  if (!stripePublishableKey.startsWith('pk_')) {
+    console.error('❌ Invalid Stripe publishable key format!');
+    console.error('Key should start with "pk_test_" or "pk_live_"');
+    console.error('Received key starts with:', stripePublishableKey.substring(0, 20) + '...');
+    console.error('Key length:', stripePublishableKey.length);
+    console.error('Check Render secrets: PUB_KEY should contain your Stripe Publishable Key (starts with pk_)');
+  } else {
+    console.log('✓ Stripe publishable key available and valid format');
+  }
+}
 
 const app = express();
 
-// Enhanced security middleware
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      scriptSrc: ["'self'", "https://js.stripe.com"],
-      imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "https://api.stripe.com"],
-    },
+// Trust proxy for rate limiting behind reverse proxy (Render, Cloudflare, etc.)
+app.set('trust proxy', 1);
+
+app.use(helmet({ crossOriginEmbedderPolicy: false }));
+app.use(helmet.hsts({ maxAge: 15552000, includeSubDomains: true, preload: true }));
+app.use(helmet.referrerPolicy({ policy: 'no-referrer' }));
+// Set modern Permissions-Policy header (Helmet no longer provides an API for this)
+app.use((_, res, next) => {
+  res.setHeader(
+    'Permissions-Policy',
+    [
+      'geolocation=()',
+      'camera=()',
+      'microphone=()',
+      'usb=()',
+      'payment=(self)',
+      'fullscreen=(self)'
+    ].join(', ')
+  );
+  next();
+});
+// Basic CSP, allow our domain and Stripe for payments
+app.use(helmet.contentSecurityPolicy({
+  useDefaults: true,
+  directives: {
+    "default-src": ["'self'"],
+    // Allow inline scripts for the existing inline calendar/payment code
+    "script-src": ["'self'", "'unsafe-inline'", 'https://js.stripe.com'],
+    "frame-src": ["'self'", 'https://js.stripe.com'],
+    "connect-src": ["'self'"],
+    "img-src": ["'self'", 'data:'],
+    "style-src": ["'self'", "'unsafe-inline'"],
+    "base-uri": ["'self'"],
+    "form-action": ["'self'"]
+  }
+}));
+app.use(compression());
+
+// Restrictive CORS configuration with whitelist
+const defaultAllowedOrigins = [
+  'https://flawlessfini.sh',
+  'https://www.flawlessfini.sh',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000'
+];
+const envAllowed = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
+const allowedOrigins = Array.from(new Set([...defaultAllowedOrigins, ...envAllowed]));
+
+app.use(cors({
+  origin: function(origin, callback) {
+    // Block requests with no origin (like curl) by default
+    if (!origin) return callback(null, false);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(null, false);
   },
-  crossOriginEmbedderPolicy: false
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-app.use(compression());
-app.use(cors({ origin: true }));
+// Cookies for user preferences (signed)
+app.use(cookieParser(process.env.COOKIE_SECRET || 'change-me'));
 app.disable('x-powered-by');
 
-// Enhanced rate limiting
-const limiter = rateLimit({ 
-  windowMs: 15 * 60 * 1000, 
-  max: 200,
-  message: { success: false, message: 'Too many requests, please try again later.' }
-});
+const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200 });
 app.use(limiter);
 
-// Enhanced body parsing
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 const BOOKINGS_FILE = path.join(__dirname, 'bookings.json');
 
-// ── Enhanced Helpers ───────────────────────────────────────────────────────────
+// ── Preferences API ────────────────────────────────────────────────────────────
+// Shape: { functional: true, analytics: false, marketing: false, communications: 'sms'|'email'|'none' }
+app.get('/api/preferences', (req, res) => {
+  try {
+    const raw = req.signedCookies?.ff_prefs;
+    const prefs = raw ? JSON.parse(raw) : null;
+    return res.json({
+      success: true,
+      preferences: Object.assign({ functional: true, analytics: false, marketing: false, communications: 'none' }, prefs || {})
+    });
+  } catch {
+    return res.json({ success: true, preferences: { functional: true, analytics: false, marketing: false, communications: 'none' } });
+  }
+});
+
+app.post('/api/preferences', (req, res) => {
+  try {
+    const { functional = true, analytics = false, marketing = false, communications = 'none' } = req.body || {};
+    const sanitized = {
+      functional: Boolean(functional),
+      analytics: Boolean(analytics),
+      marketing: Boolean(marketing),
+      communications: ['sms','email','none'].includes(communications) ? communications : 'none'
+    };
+    res.cookie('ff_prefs', JSON.stringify(sanitized), {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: true,
+      signed: true,
+      maxAge: 31536000000 // 1 year
+    });
+    return res.json({ success: true, preferences: sanitized });
+  } catch (e) {
+    return res.status(400).json({ success: false, message: 'Invalid preferences' });
+  }
+});
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function readBookings() {
   try {
     if (!fs.existsSync(BOOKINGS_FILE)) return [];
@@ -56,13 +186,11 @@ function readBookings() {
     return [];
   }
 }
-
 function writeBookings(bookings) {
   try {
     fs.writeFileSync(BOOKINGS_FILE, JSON.stringify(bookings, null, 2));
   } catch {}
 }
-
 function toYMD(d) {
   const dt = new Date(d);
   const y = dt.getFullYear();
@@ -71,22 +199,26 @@ function toYMD(d) {
   return `${y}-${m}-${day}`;
 }
 
-// Enhanced validation helpers
-function validatePhone(phone) {
-  const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-  return phoneRegex.test(phone.replace(/[\s\-\(\)]/g, ''));
+// HTML-escape helper to prevent injection in email templates
+function escapeHtml(input) {
+  const str = String(input ?? '');
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
-function validateEmail(email) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
+// Helper to sanitize a phone number for use in a tel: href
+function sanitizePhoneForTelLink(phone) {
+  // Only allow numbers, +, -, (, ), and spaces for tel: URIs
+  return String(phone || '')
+    .replace(/[^0-9+\-\s\(\)]/g, '')
+    .trim();
 }
 
-function sanitizeInput(input, maxLength = 100) {
-  return String(input || '').slice(0, maxLength).trim();
-}
-
-// ── Enhanced Email Configuration ───────────────────────────────────────────────
+// ── Email Configuration ─────────────────────────────────────────────────────────
 const emailConfig = {
   host: process.env.EMAIL_HOST || 'smtp.gmail.com',
   port: parseInt(process.env.EMAIL_PORT || '587'),
@@ -94,11 +226,26 @@ const emailConfig = {
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
-  }
+  },
+  connectionTimeout: 10000, // 10 seconds
+  greetingTimeout: 10000,
+  socketTimeout: 10000
 };
 
 const transporter = nodemailer.createTransport(emailConfig);
-const jasonEmail = 'chaddGeePeeTee@gmail.com';
+// Support multiple recipient emails (comma-separated) via ADMIN_EMAIL env var, fallback to default
+const recipientEmails = process.env.ADMIN_EMAIL 
+  ? process.env.ADMIN_EMAIL.split(',').map(e => e.trim()).filter(Boolean)
+  : ['j@flawlessfini.sh'];
+
+// Log email configuration at startup
+if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+  console.log('✓ Email service configured');
+  console.log('  Recipient emails:', recipientEmails.join(', '));
+  console.log('  From:', process.env.EMAIL_USER);
+} else {
+  console.warn('⚠️  Email service not configured (EMAIL_USER/EMAIL_PASS missing)');
+}
 
 async function sendEmailNotification(bookingData) {
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
@@ -107,11 +254,14 @@ async function sendEmailNotification(bookingData) {
   }
   
   try {
-    const { customerName, customerPhone, customerEmail, selectedDate, vehicleInfo, depositAmount } = bookingData;
+    const { customerName, customerPhone, customerEmail, selectedDate, timeSlot, vehicleInfo, depositAmount, serviceLevel } = bookingData;
+    
+    console.log('Sending booking notification email to:', recipientEmails.join(', '));
+    console.log('Customer info:', { name: customerName, phone: customerPhone, date: selectedDate, timeSlot, vehicle: vehicleInfo, service: serviceLevel });
     
     const mailOptions = {
       from: `"Flawless Finish Website" <${process.env.EMAIL_USER}>`,
-      to: jasonEmail,
+      to: recipientEmails.join(', '), // Support multiple recipients
       subject: `New Booking - ${customerName} - ${selectedDate}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -123,23 +273,31 @@ async function sendEmailNotification(bookingData) {
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
                 <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold; width: 30%;">Name:</td>
-                <td style="padding: 10px; border-bottom: 1px solid #ddd;">${customerName}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #ddd;">${escapeHtml(customerName)}</td>
               </tr>
               <tr>
                 <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold;">Phone:</td>
-                <td style="padding: 10px; border-bottom: 1px solid #ddd;">${customerPhone}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #ddd;">${escapeHtml(customerPhone)}</td>
               </tr>
               <tr>
                 <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold;">Email:</td>
-                <td style="padding: 10px; border-bottom: 1px solid #ddd;">${customerEmail}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #ddd;">${escapeHtml(customerEmail)}</td>
               </tr>
               <tr>
                 <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold;">Date:</td>
-                <td style="padding: 10px; border-bottom: 1px solid #ddd;">${selectedDate}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #ddd;">${escapeHtml(selectedDate)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold;">Time Slot:</td>
+                <td style="padding: 10px; border-bottom: 1px solid #ddd;">${escapeHtml(timeSlot ? timeSlot.charAt(0).toUpperCase() + timeSlot.slice(1) : 'Not specified')}</td>
               </tr>
               <tr>
                 <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold;">Vehicle:</td>
-                <td style="padding: 10px; border-bottom: 1px solid #ddd;">${vehicleInfo || 'Not specified'}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #ddd;">${escapeHtml(vehicleInfo || 'Not specified')}</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold;">Service:</td>
+                <td style="padding: 10px; border-bottom: 1px solid #ddd;">${escapeHtml(serviceLevel || 'Not specified')}</td>
               </tr>
               <tr>
                 <td style="padding: 10px; font-weight: bold;">Deposit:</td>
@@ -153,7 +311,7 @@ async function sendEmailNotification(bookingData) {
             </div>
 
             <div style="margin-top: 20px; text-align: center;">
-              <a href="tel:${customerPhone}" style="background: #FFD700; color: #0a0f1a; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+              <a href="tel:${sanitizePhoneForTelLink(customerPhone)}" style="background: #FFD700; color: #0a0f1a; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
                 📞 Call Customer
               </a>
             </div>
@@ -167,56 +325,46 @@ async function sendEmailNotification(bookingData) {
       `
     };
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log('Email sent:', info.messageId);
+    // Race email send against timeout (10 seconds max)
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Email send timeout after 10 seconds')), 10000);
+    });
+    
+    const info = await Promise.race([
+      transporter.sendMail(mailOptions),
+      timeoutPromise
+    ]);
+    
+    console.log('✅ Email sent successfully to:', recipientEmails.join(', '));
+    console.log('Email message ID:', info.messageId);
   } catch (err) {
     console.error('Email error:', err?.message || err);
+    // Don't block booking - email failure shouldn't prevent booking completion
   }
 }
 
-// ── Enhanced API Endpoints ─────────────────────────────────────────────────────
-
-// GET Stripe publishable key
-app.get('/api/stripe-key', (req, res) => {
-  const publishableKey = process.env.STRIPE_PUBLISHABLE_KEY;
-  if (!publishableKey) {
-    return res.status(500).json({ error: 'Stripe not configured' });
-  }
-  res.json({ publishableKey });
-});
-
-// GET availability with enhanced validation
+// ── API: availability (one car per day) ───────────────────────────────────────
 app.get('/api/availability', (req, res) => {
-  try {
-    const days = Math.min(parseInt(req.query.days || '30', 10), 90); // Max 90 days
-    const bookings = readBookings();
-    const now = new Date();
-    now.setHours(0,0,0,0);
+  const days = parseInt(req.query.days || '30', 10);
+  const bookings = readBookings();
+  const now = new Date();
+  now.setHours(0,0,0,0);
 
-    const out = [];
-    for (let i = 1; i <= days; i++) {
-      const d = new Date(now);
-      d.setDate(now.getDate() + i);
-      const dow = d.getDay(); // 0 Sun .. 6 Sat
-      if (dow === 0) continue; // closed Sundays
+  const out = [];
+  for (let i = 0; i < days; i++) {
+    const d = new Date(now);
+    d.setDate(now.getDate() + i);
+    const dow = d.getDay(); // 0 Sun .. 6 Sat
+    if (dow === 0) continue; // closed Sundays
 
-      const ymd = toYMD(d);
-      const booked = bookings.some(b => b.date === ymd);
-      out.push({ 
-        date: ymd, 
-        booked,
-        dayOfWeek: d.toLocaleDateString('en-US', { weekday: 'short' }),
-        displayDate: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-      });
-    }
-    res.json({ success: true, days: out });
-  } catch (error) {
-    console.error('Availability error:', error);
-    res.status(500).json({ success: false, message: 'Failed to fetch availability' });
+    const ymd = toYMD(d);
+    const booked = bookings.some(b => b.date === ymd);
+    out.push({ date: ymd, booked });
   }
+  res.json({ days: out });
 });
 
-// POST create payment intent with enhanced validation
+// ── API: create payment intent ─────────────────────────────────────────────────
 app.post('/api/create-payment-intent', async (req, res) => {
   try {
     if (!stripe) {
@@ -226,30 +374,18 @@ app.post('/api/create-payment-intent', async (req, res) => {
       });
     }
 
-    const { date, name, phone, email } = req.body || {};
-    
-    // Enhanced validation
+    const { date, name, phone } = req.body || {};
     if (!date) return res.status(400).json({ success: false, message: 'Please select a date.' });
-    if (!name || name.trim().length < 2) return res.status(400).json({ success: false, message: 'Please enter a valid name (minimum 2 characters).' });
-    if (!phone || !validatePhone(phone)) return res.status(400).json({ success: false, message: 'Please enter a valid phone number.' });
-    if (email && !validateEmail(email)) return res.status(400).json({ success: false, message: 'Please enter a valid email address.' });
-
-    // Check if date is already booked
-    const bookings = readBookings();
-    const sanitizedDate = toYMD(date);
-    if (bookings.some(b => b.date === sanitizedDate)) {
-      return res.status(409).json({ success: false, message: 'That day is already booked.' });
-    }
+    if (!name || name.trim().length === 0) return res.status(400).json({ success: false, message: 'Please enter your name.' });
+    if (!phone || phone.trim().length === 0) return res.status(400).json({ success: false, message: 'Please enter your phone number.' });
 
     // Create Stripe payment intent
     const paymentIntent = await stripe.paymentIntents.create({
       amount: 25000, // $250.00 in cents
       currency: 'usd',
       metadata: {
-        date: sanitizedDate,
-        name: sanitizeInput(name, 80),
-        phone: sanitizeInput(phone, 40),
-        email: sanitizeInput(email, 100),
+        // Keep metadata minimal to avoid storing PII in Stripe
+        date: String(date).slice(0, 10),
         service: 'Flawless Finish Ceramic Coating Deposit'
       }
     });
@@ -265,7 +401,7 @@ app.post('/api/create-payment-intent', async (req, res) => {
   }
 });
 
-// POST confirm payment with enhanced validation
+// ── API: confirm payment and book ──────────────────────────────────────────────
 app.post('/api/confirm-payment', async (req, res) => {
   try {
     if (!stripe) {
@@ -275,7 +411,7 @@ app.post('/api/confirm-payment', async (req, res) => {
       });
     }
 
-    const { paymentIntentId, date, name, phone, email } = req.body || {};
+    const { paymentIntentId, date, name, phone, timeSlot, vehicleYear, vehicleMake, vehicleModel, vehicleTrim, vehicleColor, serviceLevel } = req.body || {};
     
     if (!paymentIntentId || !date) {
       return res.status(400).json({ success: false, message: 'Missing payment or date information.' });
@@ -289,25 +425,24 @@ app.post('/api/confirm-payment', async (req, res) => {
     }
 
     // Sanitize input
-    const sanitizedDate = toYMD(date);
-    const sanitizedName = sanitizeInput(name, 80);
-    const sanitizedPhone = sanitizeInput(phone, 40);
-    const sanitizedEmail = sanitizeInput(email, 100);
+    const sanitizedDate = String(date).slice(0, 10);
+    const sanitizedName = String(name || '').slice(0, 80);
+    const sanitizedPhone = String(phone || '').slice(0, 40);
+    const vehicleSummary = [vehicleYear, vehicleMake, vehicleModel, vehicleTrim, vehicleColor]
+      .map(x => (x == null ? '' : String(x).trim()))
+      .filter(Boolean)
+      .join(' ');
 
     const bookings = readBookings();
     if (bookings.some(b => b.date === sanitizedDate)) {
       return res.status(409).json({ success: false, message: 'That day is already booked.' });
     }
 
-    // Save booking with payment confirmation
+    // Save only the booked date and non-PII details
     bookings.push({ 
-      date: sanitizedDate, 
-      name: sanitizedName, 
-      phone: sanitizedPhone,
-      email: sanitizedEmail,
-      method: 'card', 
+      date: sanitizedDate,
+      method: 'card',
       deposit: 250,
-      stripePaymentId: paymentIntentId,
       createdAt: new Date().toISOString() 
     });
     writeBookings(bookings);
@@ -317,9 +452,11 @@ app.post('/api/confirm-payment', async (req, res) => {
     await sendEmailNotification({
       customerName: sanitizedName || 'N/A',
       customerPhone: sanitizedPhone || 'N/A',
-      customerEmail: sanitizedEmail || 'Not provided',
+      customerEmail: 'Not provided',
       selectedDate: humanDate,
-      vehicleInfo: 'Not specified',
+      timeSlot: timeSlot || 'Not specified',
+      vehicleInfo: vehicleSummary || 'Not specified',
+      serviceLevel: serviceLevel || 'Not specified',
       depositAmount: 25000,
       paymentMethod: 'Stripe Card',
       stripePaymentId: paymentIntentId
@@ -338,203 +475,123 @@ app.post('/api/confirm-payment', async (req, res) => {
   }
 });
 
-// POST book cash with enhanced validation
+// ── API: book cash reservation ────────────────────────────────────────────────
 app.post('/api/book-cash', async (req, res) => {
-  try {
-    const { date, name, phone, email } = req.body || {};
-    
-    // Enhanced validation
-    if (!date) return res.status(400).json({ success: false, message: 'Please select a date.' });
-    if (!name || name.trim().length < 2) return res.status(400).json({ success: false, message: 'Please enter a valid name (minimum 2 characters).' });
-    if (!phone || !validatePhone(phone)) return res.status(400).json({ success: false, message: 'Please enter a valid phone number.' });
-    if (email && !validateEmail(email)) return res.status(400).json({ success: false, message: 'Please enter a valid email address.' });
+  let { date, name, phone, timeSlot, vehicleYear, vehicleMake, vehicleModel, vehicleTrim, vehicleColor, serviceLevel } = req.body || {};
+  if (!date) return res.status(400).json({ success: false, message: 'Please select a date.' });
+  if (!name || name.trim().length === 0) return res.status(400).json({ success: false, message: 'Please enter your name.' });
+  if (!phone || phone.trim().length === 0) return res.status(400).json({ success: false, message: 'Please enter your phone number.' });
 
-    // Sanitize input
-    const sanitizedDate = toYMD(date);
-    const sanitizedName = sanitizeInput(name, 80);
-    const sanitizedPhone = sanitizeInput(phone, 40);
-    const sanitizedEmail = sanitizeInput(email, 100);
+  // sanitize input
+  const sanitizedDate = String(date).slice(0, 10); // YYYY-MM-DD
+  const sanitizedName = typeof name === 'string' ? name.slice(0, 80) : '';
+  const sanitizedPhone = typeof phone === 'string' ? phone.slice(0, 40) : '';
+  const vehicleSummary = [vehicleYear, vehicleMake, vehicleModel, vehicleTrim, vehicleColor]
+    .map(x => (x == null ? '' : String(x).trim()))
+    .filter(Boolean)
+    .join(' ');
 
-    const bookings = readBookings();
-    if (bookings.some(b => b.date === sanitizedDate)) {
-      return res.status(409).json({ success: false, message: 'That day is already booked.' });
-    }
-
-    // Save cash booking
-    bookings.push({ 
-      date: sanitizedDate, 
-      name: sanitizedName, 
-      phone: sanitizedPhone,
-      email: sanitizedEmail,
-      method: 'cash', 
-      deposit: 0, 
-      createdAt: new Date().toISOString() 
-    });
-    writeBookings(bookings);
-
-    // Notify Jason by email
-    const humanDate = new Date(sanitizedDate + 'T12:00:00').toLocaleDateString([], { weekday:'short', month:'short', day:'numeric', timeZone: 'America/Los_Angeles' });
-    await sendEmailNotification({
-      customerName: sanitizedName || 'N/A',
-      customerPhone: sanitizedPhone || 'N/A',
-      customerEmail: sanitizedEmail || 'Not provided',
-      selectedDate: humanDate,
-      vehicleInfo: 'Not specified',
-      depositAmount: 0,
-      paymentMethod: 'Cash Reservation',
-      stripePaymentId: 'N/A'
-    });
-
-    return res.json({ success: true, message: 'Cash reservation saved.', date: sanitizedDate, method: 'cash' });
-  } catch (error) {
-    console.error('Cash booking error:', error);
-    res.status(500).json({ success: false, message: 'Cash booking failed.' });
+  const bookings = readBookings();
+  if (bookings.some(b => b.date === sanitizedDate)) {
+    return res.status(409).json({ success: false, message: 'That day is already booked.' });
   }
+
+  // Save only the booked date and non-PII details
+  bookings.push({ 
+    date: sanitizedDate,
+    method: 'cash', 
+    deposit: 0, 
+    createdAt: new Date().toISOString() 
+  });
+  writeBookings(bookings);
+
+  // Notify Jason by email
+  const humanDate = new Date(sanitizedDate + 'T12:00:00').toLocaleDateString([], { weekday:'short', month:'short', day:'numeric', timeZone: 'America/Los_Angeles' });
+  await sendEmailNotification({
+    customerName: sanitizedName || 'N/A',
+    customerPhone: sanitizedPhone || 'N/A',
+    customerEmail: 'Not provided',
+    selectedDate: humanDate,
+    timeSlot: timeSlot || 'Not specified',
+    vehicleInfo: vehicleSummary || 'Not specified',
+    serviceLevel: serviceLevel || 'Not specified',
+    depositAmount: 0,
+    paymentMethod: 'Cash Reservation',
+    stripePaymentId: 'N/A'
+  });
+
+  return res.json({ success: true, message: 'Cash reservation saved.', date: sanitizedDate, method: 'cash' });
 });
 
-// POST submit review with enhanced validation
-app.post('/api/submit-review', async (req, res) => {
-  try {
-    const { name, location, review, rating } = req.body || {};
-    
-    if (!name || !location || !review || !rating) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'All fields are required' 
-      });
+// ── API: get Stripe publishable key ───────────────────────────────────────────
+app.get('/api/stripe-key', (_, res) => {
+  // Comprehensive diagnostic logging
+  console.log('=== Stripe Key Retrieval Diagnostics ===');
+  
+  // Check all possible env var names
+  const possibleEnvVars = [
+    'STRIPE_PUBLISHABLE_KEY',
+    'PUB_KEY',
+    'STRIPE_PUB_KEY',
+    'STRIPE_PUBLISHABLE',
+    'PUBLISHABLE_KEY'
+  ];
+  
+  const envVarStatus = {};
+  for (const varName of possibleEnvVars) {
+    const value = process.env[varName];
+    if (value) {
+      envVarStatus[varName] = `exists (length: ${value.length}, starts with: ${value.substring(0, 10)}...)`;
+    } else {
+      envVarStatus[varName] = 'missing';
     }
-
-    // Enhanced validation
-    if (name.trim().length < 2) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Name must be at least 2 characters' 
-      });
-    }
-
-    if (review.trim().length < 10) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Review must be at least 10 characters' 
-      });
-    }
-
-    // Validate rating
-    const ratingNum = parseInt(rating);
-    if (ratingNum < 1 || ratingNum > 5) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Rating must be between 1 and 5' 
-      });
-    }
-
-    // Store review (in production, use a database)
-    const reviewsFile = path.join(__dirname, 'reviews.json');
-    let reviews = [];
+  }
+  console.log('Environment variables check:', envVarStatus);
+  
+  // Check secret files
+  const secretFilePaths = ['/etc/secrets/PUB_KEY', '/etc/secrets/STRIPE_PUBLISHABLE_KEY'];
+  for (const filePath of secretFilePaths) {
     try {
-      if (fs.existsSync(reviewsFile)) {
-        reviews = JSON.parse(fs.readFileSync(reviewsFile, 'utf8'));
+      if (fs.existsSync(filePath)) {
+        const content = fs.readFileSync(filePath, 'utf8').trim();
+        console.log(`Secret file ${filePath}: exists (length: ${content.length}, starts with: ${content.substring(0, 10)}...)`);
+      } else {
+        console.log(`Secret file ${filePath}: not found`);
       }
-    } catch {}
-
-    reviews.push({
-      name: sanitizeInput(name, 80),
-      location: sanitizeInput(location, 80),
-      review: sanitizeInput(review, 500),
-      rating: ratingNum,
-      createdAt: new Date().toISOString()
-    });
-
-    fs.writeFileSync(reviewsFile, JSON.stringify(reviews, null, 2));
-
-    res.json({ 
-      success: true, 
-      message: 'Review submitted successfully' 
-    });
-  } catch (error) {
-    console.error('Review submission error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to submit review' 
-    });
-  }
-});
-
-// GET reviews
-app.get('/api/reviews', (req, res) => {
-  try {
-    const reviewsFile = path.join(__dirname, 'reviews.json');
-    let reviews = [];
-    
-    if (fs.existsSync(reviewsFile)) {
-      reviews = JSON.parse(fs.readFileSync(reviewsFile, 'utf8'));
+    } catch (e) {
+      console.log(`Secret file ${filePath}: error reading - ${e.message}`);
     }
-
-    // Return most recent reviews first
-    reviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    
-    res.json({ 
-      success: true, 
-      reviews: reviews.slice(0, 10) // Limit to 10 most recent
-    });
-  } catch (error) {
-    console.error('Get reviews error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to fetch reviews' 
-    });
   }
-});
-
-// POST email signup with enhanced validation
-app.post('/api/email-signup', async (req, res) => {
-  try {
-    const { email } = req.body || {};
-    
-    if (!email || !validateEmail(email)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Valid email address is required' 
-      });
-    }
-
-    // Store email signup (in production, use a database)
-    const signupsFile = path.join(__dirname, 'email-signups.json');
-    let signups = [];
-    try {
-      if (fs.existsSync(signupsFile)) {
-        signups = JSON.parse(fs.readFileSync(signupsFile, 'utf8'));
-      }
-    } catch {}
-
-    const normalizedEmail = email.toLowerCase().trim();
-    
-    // Check if email already exists
-    if (signups.some(s => s.email === normalizedEmail)) {
-      return res.status(409).json({ 
-        success: false, 
-        message: 'Email already subscribed' 
-      });
-    }
-
-    signups.push({
-      email: normalizedEmail,
-      createdAt: new Date().toISOString()
-    });
-
-    fs.writeFileSync(signupsFile, JSON.stringify(signups, null, 2));
-
-    res.json({ 
-      success: true, 
-      message: 'Successfully subscribed to updates' 
-    });
-  } catch (error) {
-    console.error('Email signup error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to subscribe' 
-    });
+  
+  // Try to get the key using getSecret
+  let key = getSecret('STRIPE_PUBLISHABLE_KEY', 'PUB_KEY') || getSecret('PUB_KEY', null) || '';
+  
+  if (!key) {
+    // Try direct env var access as fallback
+    key = process.env.STRIPE_PUBLISHABLE_KEY || process.env.PUB_KEY || '';
   }
+  
+  // Validate key format - must start with pk_test_ or pk_live_
+  if (key && !key.startsWith('pk_')) {
+    console.error('❌ Invalid Stripe publishable key format in API response');
+    console.error('Key should start with "pk_test_" or "pk_live_"');
+    console.error('Received key starts with:', key.substring(0, 20) + '...');
+    console.error('Key length:', key.length);
+    console.error('Returning empty key to prevent frontend errors');
+    key = ''; // Return empty to trigger proper error handling on frontend
+  }
+  
+  if (!key) {
+    console.warn('⚠️ STRIPE_PUBLISHABLE_KEY/PUB_KEY not found or invalid');
+    console.warn('Please check Render environment variables or secret files');
+    console.warn('Expected: PUB_KEY or STRIPE_PUBLISHABLE_KEY containing a key starting with pk_test_ or pk_live_');
+  } else {
+    console.log('✓ Stripe publishable key found and valid');
+  }
+  
+  console.log('=== End Diagnostics ===');
+  
+  res.json({ publishableKey: key });
 });
 
 // ── Root ──────────────────────────────────────────────────────────────────────
