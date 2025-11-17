@@ -10,58 +10,12 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const nodemailer = require('nodemailer');
 
-// Helper to read secrets from Render secret files or env vars
-function getSecret(name, renderFilename) {
-  // Try env var first (standard naming)
-  if (process.env[name]) {
-    const val = String(process.env[name]).trim();
-    if (val) return val;
-  }
-  // Try Render secret file env var (Render exposes secret files as env vars with filename)
-  if (renderFilename && process.env[renderFilename]) {
-    const val = String(process.env[renderFilename]).trim();
-    if (val) return val;
-  }
-  // Try Render secret file path (fallback)
-  if (renderFilename) {
-    try {
-      const secretPath = `/etc/secrets/${renderFilename}`;
-      if (fs.existsSync(secretPath)) {
-        return fs.readFileSync(secretPath, 'utf8').trim();
-      }
-    } catch (e) {
-      // File doesn't exist or can't read
-    }
-  }
-  return null;
-}
-
 // Initialize Stripe with fallback for missing keys
-// Support both STRIPE_SECRET_KEY/SEC_KEY env vars and Render secret files
-const stripeSecretKey = getSecret('STRIPE_SECRET_KEY', 'SEC_KEY') || getSecret('SEC_KEY', null);
-const stripe = stripeSecretKey ? require('stripe')(stripeSecretKey) : null;
+const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
 if (!stripe) {
-  console.warn('⚠️  STRIPE_SECRET_KEY/SEC_KEY not found (env or /etc/secrets/SEC_KEY) - payment features will be disabled');
-  console.log('Available env vars:', Object.keys(process.env).filter(k => k.includes('SEC') || k.includes('STRIPE')).join(', ') || 'none');
+  console.warn('⚠️  STRIPE_SECRET_KEY not found - payment features will be disabled');
 } else {
   console.log('✓ Stripe initialized with secret key');
-}
-// Support both STRIPE_PUBLISHABLE_KEY/PUB_KEY env vars and Render secret files
-const stripePublishableKey = getSecret('STRIPE_PUBLISHABLE_KEY', 'PUB_KEY') || getSecret('PUB_KEY', null);
-if (!stripePublishableKey) {
-  console.warn('⚠️  STRIPE_PUBLISHABLE_KEY/PUB_KEY not found (env or /etc/secrets/PUB_KEY) - payment button will show as not configured');
-  console.log('Available env vars:', Object.keys(process.env).filter(k => k.includes('PUB') || k.includes('STRIPE')).join(', ') || 'none');
-} else {
-  // Validate key format
-  if (!stripePublishableKey.startsWith('pk_')) {
-    console.error('❌ Invalid Stripe publishable key format!');
-    console.error('Key should start with "pk_test_" or "pk_live_"');
-    console.error('Received key starts with:', stripePublishableKey.substring(0, 20) + '...');
-    console.error('Key length:', stripePublishableKey.length);
-    console.error('Check Render secrets: PUB_KEY should contain your Stripe Publishable Key (starts with pk_)');
-  } else {
-    console.log('✓ Stripe publishable key available and valid format');
-  }
 }
 
 const app = express();
@@ -254,10 +208,10 @@ async function sendEmailNotification(bookingData) {
   }
   
   try {
-    const { customerName, customerPhone, customerEmail, selectedDate, timeSlot, vehicleInfo, depositAmount, serviceLevel } = bookingData;
+    const { customerName, customerPhone, customerEmail, selectedDate, vehicleInfo, depositAmount, serviceLevel } = bookingData;
     
     console.log('Sending booking notification email to:', recipientEmails.join(', '));
-    console.log('Customer info:', { name: customerName, phone: customerPhone, date: selectedDate, timeSlot, vehicle: vehicleInfo, service: serviceLevel });
+    console.log('Customer info:', { name: customerName, phone: customerPhone, date: selectedDate, vehicle: vehicleInfo, service: serviceLevel });
     
     const mailOptions = {
       from: `"Flawless Finish Website" <${process.env.EMAIL_USER}>`,
@@ -288,11 +242,7 @@ async function sendEmailNotification(bookingData) {
                 <td style="padding: 10px; border-bottom: 1px solid #ddd;">${escapeHtml(selectedDate)}</td>
               </tr>
               <tr>
-                <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold;">Time Slot:</td>
-                <td style="padding: 10px; border-bottom: 1px solid #ddd;">${escapeHtml(timeSlot ? timeSlot.charAt(0).toUpperCase() + timeSlot.slice(1) : 'Not specified')}</td>
-              </tr>
-              <tr>
-                <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold;">Vehicle:</td>
+                <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold;">Vehicle Type:</td>
                 <td style="padding: 10px; border-bottom: 1px solid #ddd;">${escapeHtml(vehicleInfo || 'Not specified')}</td>
               </tr>
               <tr>
@@ -359,7 +309,8 @@ app.get('/api/availability', (req, res) => {
 
     const ymd = toYMD(d);
     const booked = bookings.some(b => b.date === ymd);
-    out.push({ date: ymd, booked });
+    const displayDate = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    out.push({ date: ymd, booked, displayDate });
   }
   res.json({ days: out });
 });
@@ -411,7 +362,7 @@ app.post('/api/confirm-payment', async (req, res) => {
       });
     }
 
-    const { paymentIntentId, date, name, phone, timeSlot, vehicleYear, vehicleMake, vehicleModel, vehicleTrim, vehicleColor, serviceLevel } = req.body || {};
+    const { paymentIntentId, date, name, phone, vehicleType, serviceLevel } = req.body || {};
     
     if (!paymentIntentId || !date) {
       return res.status(400).json({ success: false, message: 'Missing payment or date information.' });
@@ -428,10 +379,7 @@ app.post('/api/confirm-payment', async (req, res) => {
     const sanitizedDate = String(date).slice(0, 10);
     const sanitizedName = String(name || '').slice(0, 80);
     const sanitizedPhone = String(phone || '').slice(0, 40);
-    const vehicleSummary = [vehicleYear, vehicleMake, vehicleModel, vehicleTrim, vehicleColor]
-      .map(x => (x == null ? '' : String(x).trim()))
-      .filter(Boolean)
-      .join(' ');
+    const vehicleInfo = vehicleType ? String(vehicleType).charAt(0).toUpperCase() + String(vehicleType).slice(1) : 'Not specified';
 
     const bookings = readBookings();
     if (bookings.some(b => b.date === sanitizedDate)) {
@@ -440,8 +388,8 @@ app.post('/api/confirm-payment', async (req, res) => {
 
     // Save only the booked date and non-PII details
     bookings.push({ 
-      date: sanitizedDate,
-      method: 'card',
+      date: sanitizedDate, 
+      method: 'card', 
       deposit: 250,
       createdAt: new Date().toISOString() 
     });
@@ -454,8 +402,7 @@ app.post('/api/confirm-payment', async (req, res) => {
       customerPhone: sanitizedPhone || 'N/A',
       customerEmail: 'Not provided',
       selectedDate: humanDate,
-      timeSlot: timeSlot || 'Not specified',
-      vehicleInfo: vehicleSummary || 'Not specified',
+      vehicleInfo: vehicleInfo,
       serviceLevel: serviceLevel || 'Not specified',
       depositAmount: 25000,
       paymentMethod: 'Stripe Card',
@@ -477,7 +424,7 @@ app.post('/api/confirm-payment', async (req, res) => {
 
 // ── API: book cash reservation ────────────────────────────────────────────────
 app.post('/api/book-cash', async (req, res) => {
-  let { date, name, phone, timeSlot, vehicleYear, vehicleMake, vehicleModel, vehicleTrim, vehicleColor, serviceLevel } = req.body || {};
+  let { date, name, phone, vehicleType, serviceLevel } = req.body || {};
   if (!date) return res.status(400).json({ success: false, message: 'Please select a date.' });
   if (!name || name.trim().length === 0) return res.status(400).json({ success: false, message: 'Please enter your name.' });
   if (!phone || phone.trim().length === 0) return res.status(400).json({ success: false, message: 'Please enter your phone number.' });
@@ -486,10 +433,7 @@ app.post('/api/book-cash', async (req, res) => {
   const sanitizedDate = String(date).slice(0, 10); // YYYY-MM-DD
   const sanitizedName = typeof name === 'string' ? name.slice(0, 80) : '';
   const sanitizedPhone = typeof phone === 'string' ? phone.slice(0, 40) : '';
-  const vehicleSummary = [vehicleYear, vehicleMake, vehicleModel, vehicleTrim, vehicleColor]
-    .map(x => (x == null ? '' : String(x).trim()))
-    .filter(Boolean)
-    .join(' ');
+  const vehicleInfo = vehicleType ? String(vehicleType).charAt(0).toUpperCase() + String(vehicleType).slice(1) : 'Not specified';
 
   const bookings = readBookings();
   if (bookings.some(b => b.date === sanitizedDate)) {
@@ -498,7 +442,7 @@ app.post('/api/book-cash', async (req, res) => {
 
   // Save only the booked date and non-PII details
   bookings.push({ 
-    date: sanitizedDate,
+    date: sanitizedDate, 
     method: 'cash', 
     deposit: 0, 
     createdAt: new Date().toISOString() 
@@ -512,8 +456,7 @@ app.post('/api/book-cash', async (req, res) => {
     customerPhone: sanitizedPhone || 'N/A',
     customerEmail: 'Not provided',
     selectedDate: humanDate,
-    timeSlot: timeSlot || 'Not specified',
-    vehicleInfo: vehicleSummary || 'Not specified',
+    vehicleInfo: vehicleInfo,
     serviceLevel: serviceLevel || 'Not specified',
     depositAmount: 0,
     paymentMethod: 'Cash Reservation',
@@ -525,73 +468,7 @@ app.post('/api/book-cash', async (req, res) => {
 
 // ── API: get Stripe publishable key ───────────────────────────────────────────
 app.get('/api/stripe-key', (_, res) => {
-  // Comprehensive diagnostic logging
-  console.log('=== Stripe Key Retrieval Diagnostics ===');
-  
-  // Check all possible env var names
-  const possibleEnvVars = [
-    'STRIPE_PUBLISHABLE_KEY',
-    'PUB_KEY',
-    'STRIPE_PUB_KEY',
-    'STRIPE_PUBLISHABLE',
-    'PUBLISHABLE_KEY'
-  ];
-  
-  const envVarStatus = {};
-  for (const varName of possibleEnvVars) {
-    const value = process.env[varName];
-    if (value) {
-      envVarStatus[varName] = `exists (length: ${value.length}, starts with: ${value.substring(0, 10)}...)`;
-    } else {
-      envVarStatus[varName] = 'missing';
-    }
-  }
-  console.log('Environment variables check:', envVarStatus);
-  
-  // Check secret files
-  const secretFilePaths = ['/etc/secrets/PUB_KEY', '/etc/secrets/STRIPE_PUBLISHABLE_KEY'];
-  for (const filePath of secretFilePaths) {
-    try {
-      if (fs.existsSync(filePath)) {
-        const content = fs.readFileSync(filePath, 'utf8').trim();
-        console.log(`Secret file ${filePath}: exists (length: ${content.length}, starts with: ${content.substring(0, 10)}...)`);
-      } else {
-        console.log(`Secret file ${filePath}: not found`);
-      }
-    } catch (e) {
-      console.log(`Secret file ${filePath}: error reading - ${e.message}`);
-    }
-  }
-  
-  // Try to get the key using getSecret
-  let key = getSecret('STRIPE_PUBLISHABLE_KEY', 'PUB_KEY') || getSecret('PUB_KEY', null) || '';
-  
-  if (!key) {
-    // Try direct env var access as fallback
-    key = process.env.STRIPE_PUBLISHABLE_KEY || process.env.PUB_KEY || '';
-  }
-  
-  // Validate key format - must start with pk_test_ or pk_live_
-  if (key && !key.startsWith('pk_')) {
-    console.error('❌ Invalid Stripe publishable key format in API response');
-    console.error('Key should start with "pk_test_" or "pk_live_"');
-    console.error('Received key starts with:', key.substring(0, 20) + '...');
-    console.error('Key length:', key.length);
-    console.error('Returning empty key to prevent frontend errors');
-    key = ''; // Return empty to trigger proper error handling on frontend
-  }
-  
-  if (!key) {
-    console.warn('⚠️ STRIPE_PUBLISHABLE_KEY/PUB_KEY not found or invalid');
-    console.warn('Please check Render environment variables or secret files');
-    console.warn('Expected: PUB_KEY or STRIPE_PUBLISHABLE_KEY containing a key starting with pk_test_ or pk_live_');
-  } else {
-    console.log('✓ Stripe publishable key found and valid');
-  }
-  
-  console.log('=== End Diagnostics ===');
-  
-  res.json({ publishableKey: key });
+  res.json({ publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '' });
 });
 
 // ── Root ──────────────────────────────────────────────────────────────────────
