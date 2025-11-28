@@ -138,30 +138,6 @@
             <img src="images/gallery/bmw-soap-washing.jpg" alt="BMW being washed">
             <div class="gallery-caption">Easy Maintenance</div>
           </div>
-          <div class="gallery-item">
-            <img src="images/gallery/gallery-1.jpg" alt="Ceramic coating gallery image 1">
-            <div class="gallery-caption">Professional Results</div>
-          </div>
-          <div class="gallery-item">
-            <img src="images/gallery/gallery-2.jpg" alt="Ceramic coating gallery image 2">
-            <div class="gallery-caption">Premium Quality</div>
-          </div>
-          <div class="gallery-item">
-            <img src="images/gallery/gallery-3.jpg" alt="Ceramic coating gallery image 3">
-            <div class="gallery-caption">Expert Workmanship</div>
-          </div>
-          <div class="gallery-item">
-            <img src="images/gallery/gallery-4.jpg" alt="Ceramic coating gallery image 4">
-            <div class="gallery-caption">Superior Protection</div>
-          </div>
-          <div class="gallery-item">
-            <img src="images/gallery/gallery-5.jpg" alt="Ceramic coating gallery image 5">
-            <div class="gallery-caption">Perfect Shine</div>
-          </div>
-          <div class="gallery-item">
-            <img src="images/gallery/gallery-6.jpg" alt="Ceramic coating gallery image 6">
-            <div class="gallery-caption">Flawless Results</div>
-          </div>
         </div>
         <div class="gallery-cta">
           <a href="#booking" class="button primary">Book Your Ceramic Coating</a>
@@ -389,58 +365,73 @@
       </div>
     </section>
 
-    <section id="booking" class="booking-section">
+    <section id="booking" class="section light booking-section">
       <div class="container">
-        <div class="booking-container">
+        <div class="booking-header">
           <h2>Book Your Ceramic Coating</h2>
-          <p class="sub">Select your preferred date and complete your booking</p>
-          
+          <p class="booking-subtitle">Select your preferred date and complete your booking</p>
+        </div>
+        <div class="booking-container">
           <form class="booking-form" id="bookingForm">
-            <div class="form-group">
-              <label for="bookingDate">Select Your Date</label>
-              <select id="bookingDate" name="bookingDate" required>
-                <option value="">Loading available dates...</option>
-              </select>
-              <div id="nextSlot" class="text-muted" style="margin-top: 8px; font-size: 0.9em;"></div>
+            <div class="form-section">
+              <h3 class="form-section-title">Appointment Date</h3>
+              <div class="form-group">
+                <label for="bookingDate">Select Your Date</label>
+                <select id="bookingDate" name="bookingDate" required>
+                  <option value="">Select your date</option>
+                </select>
+                <div id="nextSlot" class="next-available"></div>
+              </div>
             </div>
-            
-            <div class="form-group">
-              <label for="customerName">Full Name</label>
-              <input type="text" id="customerName" name="customerName" required>
+
+            <div class="form-section">
+              <h3 class="form-section-title">Contact Information</h3>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="customerName">Full Name</label>
+                  <input type="text" id="customerName" name="customerName" placeholder="Enter your full name" required>
+                </div>
+                
+                <div class="form-group">
+                  <label for="customerPhone">Phone Number</label>
+                  <input type="tel" id="customerPhone" name="customerPhone" placeholder="(442) 555-1234" required>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="customerEmail">Email Address</label>
+                <input type="email" id="customerEmail" name="customerEmail" placeholder="your.email@example.com" required>
+              </div>
             </div>
-            
-            <div class="form-group">
-              <label for="customerPhone">Phone Number</label>
-              <input type="tel" id="customerPhone" name="customerPhone" required>
-            </div>
-            
-            <div class="form-group">
-              <label for="customerEmail">Email Address</label>
-              <input type="email" id="customerEmail" name="customerEmail" required>
-            </div>
-            
-            <div class="form-group">
-              <label for="vehicleType">Vehicle Type</label>
-              <select id="vehicleType" name="vehicleType" required>
-                <option value="">Select Vehicle Type</option>
-                <option value="car">Car</option>
-                <option value="truck">Truck</option>
-                <option value="suv">SUV</option>
-              </select>
-            </div>
-            
-            <div class="form-group">
-              <label for="serviceLevel">Service Level</label>
-              <select id="serviceLevel" name="serviceLevel" required>
-                <option value="">Select Service Level</option>
-                <option value="minimal">Minimal Paint Correction - $800</option>
-                <option value="moderate">Moderate Paint Correction - $900</option>
-                <option value="heavy">Heavy Paint Correction - $1,100</option>
-              </select>
+
+            <div class="form-section">
+              <h3 class="form-section-title">Service Details</h3>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="vehicleType">Vehicle Type</label>
+                  <select id="vehicleType" name="vehicleType" required>
+                    <option value="">Select Vehicle Type</option>
+                    <option value="car">Car</option>
+                    <option value="truck">Truck</option>
+                    <option value="suv">SUV</option>
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label for="serviceLevel">Service Level</label>
+                  <select id="serviceLevel" name="serviceLevel" required>
+                    <option value="">Select Service Level</option>
+                    <option value="minimal">Minimal Paint Correction - $800</option>
+                    <option value="moderate">Moderate Paint Correction - $900</option>
+                    <option value="heavy">Heavy Paint Correction - $1,100</option>
+                  </select>
+                </div>
+              </div>
             </div>
 
             <div class="payment-section">
-              <h3>Payment Options</h3>
+              <h3 class="form-section-title">Payment Options</h3>
+              <p class="payment-description">Choose how you'd like to secure your appointment</p>
               <div class="payment-options">
                 <button type="button" id="cashBooking" class="button secondary">Book with Cash Payment</button>
                 <button type="button" id="cardBooking" class="button primary">Pay $250 Deposit</button>

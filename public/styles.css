@@ -894,3 +894,258 @@ body.dark .step h3 {
 body.dark .step p {
     color: #ccc;
 }
+
+/* Booking Section Header */
+.booking-section {
+    padding: 4rem 0;
+}
+
+.booking-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 2px solid #FFD700;
+}
+
+.booking-header h2 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #0a0f1a;
+    margin-bottom: 1rem;
+    letter-spacing: -0.5px;
+}
+
+.booking-subtitle {
+    font-size: 1.25rem;
+    color: #555;
+    margin: 0;
+    font-weight: 400;
+    line-height: 1.6;
+}
+
+body.dark .booking-header {
+    border-bottom-color: #FFD700;
+}
+
+body.dark .booking-header h2 {
+    color: #fff;
+}
+
+body.dark .booking-subtitle {
+    color: #ccc;
+}
+
+/* Booking Form Styles */
+.booking-container {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 3rem;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+
+.booking-form {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+}
+
+.form-section {
+    padding-bottom: 2rem;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.form-section:last-of-type {
+    border-bottom: none;
+}
+
+.form-section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #0a0f1a;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #FFD700;
+    display: inline-block;
+    width: 100%;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: #0a0f1a;
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+}
+
+.form-group input,
+.form-group select {
+    padding: 14px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: #fff;
+    color: #0a0f1a;
+    font-family: inherit;
+}
+
+.form-group input::placeholder {
+    color: #999;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #FFD700;
+    box-shadow: 0 0 0 4px rgba(255, 215, 0, 0.1);
+}
+
+.form-group select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23000' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    padding-right: 40px;
+}
+
+.next-available {
+    margin-top: 0.75rem;
+    font-size: 0.9rem;
+    color: #4CAF50;
+    font-weight: 500;
+    padding: 0.5rem 0;
+}
+
+.payment-section {
+    margin-top: 1rem;
+    padding: 2rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: 12px;
+    border: 2px solid #FFD700;
+}
+
+.payment-description {
+    color: #555;
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+}
+
+.payment-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.payment-options button {
+    padding: 16px 24px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: none;
+}
+
+.payment-options .button.primary {
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    color: #0a0f1a;
+}
+
+.payment-options .button.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+}
+
+.payment-options .button.secondary {
+    background: #fff;
+    color: #0a0f1a;
+    border: 2px solid #0a0f1a;
+}
+
+.payment-options .button.secondary:hover {
+    background: #0a0f1a;
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+body.dark .booking-container {
+    background: #1a1a1a;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+body.dark .form-section {
+    border-bottom-color: #333;
+}
+
+body.dark .form-section-title {
+    color: #fff;
+    border-bottom-color: #FFD700;
+}
+
+body.dark .form-group label {
+    color: #fff;
+}
+
+body.dark .form-group input,
+body.dark .form-group select {
+    background: #2a2a2a;
+    border-color: #444;
+    color: #fff;
+}
+
+body.dark .form-group input:focus,
+body.dark .form-group select:focus {
+    border-color: #FFD700;
+}
+
+body.dark .payment-section {
+    background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+    border-color: #FFD700;
+}
+
+body.dark .payment-description {
+    color: #ccc;
+}
+
+body.dark .payment-options .button.secondary {
+    background: #2a2a2a;
+    color: #fff;
+    border-color: #444;
+}
+
+body.dark .payment-options .button.secondary:hover {
+    background: #0a0f1a;
+    border-color: #FFD700;
+}
+
+@media (max-width: 768px) {
+    .booking-container {
+        padding: 2rem 1.5rem;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .payment-options {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-section-title {
+        font-size: 1.25rem;
+    }
+}
