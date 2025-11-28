@@ -47,7 +47,7 @@ body {
 }
 
 .logo {
-  max-width: 200px;
+  max-width: 500px;
   height: auto;
 }
 
@@ -790,4 +790,107 @@ body.dark .process-step h3 {
 
 body.dark .process-step p {
     color: #bbb;
+}
+
+/* How to Book Section */
+.how-to-book-section {
+    background-color: var(--color-light);
+    padding: 4rem 0;
+}
+
+.how-to-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 2rem;
+    margin-top: 3rem;
+    position: relative;
+}
+
+.how-to-steps::before {
+    content: '';
+    position: absolute;
+    top: 25px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(to right, #FFD700, #FFA500, #FFD700);
+    z-index: 0;
+    display: none; /* Hide on mobile */
+}
+
+@media (min-width: 768px) {
+    .how-to-steps::before {
+        display: block;
+    }
+}
+
+.step {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    padding: 2rem 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 1;
+    border: 2px solid transparent;
+}
+
+.step:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    border-color: #FFD700;
+}
+
+.step .step-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    color: #0a0f1a;
+    border-radius: 50%;
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 4px 10px rgba(255, 215, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.step:hover .step-number {
+    transform: scale(1.1);
+    box-shadow: 0 6px 15px rgba(255, 215, 0, 0.5);
+}
+
+.step h3 {
+    color: #0a0f1a;
+    margin-bottom: 0.75rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.step p {
+    color: #555;
+    line-height: 1.6;
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+body.dark .step {
+    background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+    border-color: #444;
+}
+
+body.dark .step:hover {
+    border-color: #FFD700;
+}
+
+body.dark .step h3 {
+    color: #fff;
+}
+
+body.dark .step p {
+    color: #ccc;
 }

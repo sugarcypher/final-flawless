@@ -201,6 +201,111 @@ if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
   console.warn('⚠️  Email service not configured (EMAIL_USER/EMAIL_PASS missing)');
 }
 
+// Send confirmation email to customer
+async function sendCustomerConfirmationEmail(bookingData) {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.log('Customer confirmation email skipped – Email credentials missing.');
+    return;
+  }
+  
+  const { customerName, customerEmail, selectedDate, vehicleInfo, serviceLevel, depositAmount, paymentMethod } = bookingData;
+  
+  if (!customerEmail || customerEmail === 'Not provided') {
+    console.log('Customer confirmation email skipped – No customer email provided.');
+    return;
+  }
+  
+  try {
+    const serviceLevelMap = {
+      'minimal': 'Minimal Paint Correction - $800',
+      'moderate': 'Moderate Paint Correction - $900',
+      'heavy': 'Heavy Paint Correction - $1,100'
+    };
+    const serviceDisplay = serviceLevelMap[serviceLevel] || serviceLevel || 'Not specified';
+    
+    const mailOptions = {
+      from: `"Flawless Finish Ceramic Coating" <${process.env.EMAIL_USER}>`,
+      to: customerEmail,
+      subject: `Booking Confirmed - ${selectedDate}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #FFD700; background: #0a0f1a; padding: 20px; margin: 0; text-align: center;">
+            ✅ Booking Confirmed!
+          </h2>
+          <div style="background: #f8f9fa; padding: 30px;">
+            <p style="font-size: 16px; color: #0a0f1a;">Hi ${escapeHtml(customerName)},</p>
+            <p style="color: #0a0f1a;">Thank you for booking with Flawless Finish Ceramic Coating! Your appointment has been confirmed.</p>
+            
+            <div style="background: #fff; border: 2px solid #FFD700; border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <h3 style="color: #0a0f1a; margin-top: 0;">Appointment Details</h3>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold; width: 40%;">Date:</td>
+                  <td style="padding: 10px; border-bottom: 1px solid #ddd; font-size: 18px; color: #0a0f1a;">${escapeHtml(selectedDate)}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold;">Service:</td>
+                  <td style="padding: 10px; border-bottom: 1px solid #ddd;">${escapeHtml(serviceDisplay)}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold;">Vehicle Type:</td>
+                  <td style="padding: 10px; border-bottom: 1px solid #ddd;">${escapeHtml(vehicleInfo || 'Not specified')}</td>
+                </tr>
+                ${depositAmount > 0 ? `
+                <tr>
+                  <td style="padding: 10px; font-weight: bold;">Deposit Paid:</td>
+                  <td style="padding: 10px; color: #4CAF50; font-weight: bold; font-size: 18px;">$${(depositAmount / 100).toFixed(2)}</td>
+                </tr>
+                ` : ''}
+              </table>
+            </div>
+            
+            ${depositAmount > 0 ? `
+            <div style="background: #e8f5e8; border-left: 4px solid #4CAF50; padding: 15px; margin: 20px 0;">
+              <p style="margin: 0; color: #2e7d32;"><strong>✅ Deposit Received</strong></p>
+              <p style="margin: 5px 0 0 0; color: #2e7d32;">Your $${(depositAmount / 100).toFixed(2)} deposit has been received. Your appointment is secured!</p>
+            </div>
+            ` : ''}
+            
+            <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0;">
+              <p style="margin: 0; color: #856404;"><strong>📋 What to Expect</strong></p>
+              <p style="margin: 5px 0 0 0; color: #856404;">We'll contact you before your appointment to confirm details and answer any questions.</p>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <p style="color: #0a0f1a; font-weight: bold;">Questions or need to reschedule?</p>
+              <p style="margin: 10px 0;">
+                <a href="tel:4423423627" style="color: #FFD700; text-decoration: none; font-weight: bold;">📞 (442) 342-3627</a>
+              </p>
+            </div>
+          </div>
+          
+          <div style="background: #0a0f1a; color: #fff; padding: 20px; text-align: center; font-size: 12px;">
+            <p style="margin: 0; font-weight: bold;">Flawless Finish Ceramic Coating</p>
+            <p style="margin: 5px 0 0 0;">Palm Springs & Coachella Valley</p>
+            <p style="margin: 5px 0 0 0;">Owner: Jason (Jay)</p>
+          </div>
+        </div>
+      `
+    };
+    
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Email send timeout after 10 seconds')), 10000);
+    });
+    
+    const info = await Promise.race([
+      transporter.sendMail(mailOptions),
+      timeoutPromise
+    ]);
+    
+    console.log('✅ Customer confirmation email sent successfully to:', customerEmail);
+    console.log('Email message ID:', info.messageId);
+  } catch (err) {
+    console.error('Customer confirmation email error:', err?.message || err);
+    // Don't block booking - email failure shouldn't prevent booking completion
+  }
+}
+
 async function sendEmailNotification(bookingData) {
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
     console.log('Email skipped – Email credentials missing.');
@@ -362,7 +467,7 @@ app.post('/api/confirm-payment', async (req, res) => {
       });
     }
 
-    const { paymentIntentId, date, name, phone, vehicleType, serviceLevel } = req.body || {};
+    const { paymentIntentId, date, name, phone, email, vehicleType, serviceLevel } = req.body || {};
     
     if (!paymentIntentId || !date) {
       return res.status(400).json({ success: false, message: 'Missing payment or date information.' });
@@ -379,6 +484,7 @@ app.post('/api/confirm-payment', async (req, res) => {
     const sanitizedDate = String(date).slice(0, 10);
     const sanitizedName = String(name || '').slice(0, 80);
     const sanitizedPhone = String(phone || '').slice(0, 40);
+    const sanitizedEmail = String(email || '').trim().slice(0, 100);
     const vehicleInfo = vehicleType ? String(vehicleType).charAt(0).toUpperCase() + String(vehicleType).slice(1) : 'Not specified';
 
     const bookings = readBookings();
@@ -395,19 +501,25 @@ app.post('/api/confirm-payment', async (req, res) => {
     });
     writeBookings(bookings);
 
-    // Notify Jason by email
+    // Format date for emails
     const humanDate = new Date(sanitizedDate + 'T12:00:00').toLocaleDateString([], { weekday:'short', month:'short', day:'numeric', timeZone: 'America/Los_Angeles' });
-    await sendEmailNotification({
+    const bookingData = {
       customerName: sanitizedName || 'N/A',
       customerPhone: sanitizedPhone || 'N/A',
-      customerEmail: 'Not provided',
+      customerEmail: sanitizedEmail || 'Not provided',
       selectedDate: humanDate,
       vehicleInfo: vehicleInfo,
       serviceLevel: serviceLevel || 'Not specified',
       depositAmount: 25000,
       paymentMethod: 'Stripe Card',
       stripePaymentId: paymentIntentId
-    });
+    };
+
+    // Send admin notification email
+    await sendEmailNotification(bookingData);
+    
+    // Send customer confirmation email
+    await sendCustomerConfirmationEmail(bookingData);
 
     return res.json({ 
       success: true, 
@@ -424,7 +536,7 @@ app.post('/api/confirm-payment', async (req, res) => {
 
 // ── API: book cash reservation ────────────────────────────────────────────────
 app.post('/api/book-cash', async (req, res) => {
-  let { date, name, phone, vehicleType, serviceLevel } = req.body || {};
+  let { date, name, phone, email, vehicleType, serviceLevel } = req.body || {};
   if (!date) return res.status(400).json({ success: false, message: 'Please select a date.' });
   if (!name || name.trim().length === 0) return res.status(400).json({ success: false, message: 'Please enter your name.' });
   if (!phone || phone.trim().length === 0) return res.status(400).json({ success: false, message: 'Please enter your phone number.' });
@@ -433,6 +545,7 @@ app.post('/api/book-cash', async (req, res) => {
   const sanitizedDate = String(date).slice(0, 10); // YYYY-MM-DD
   const sanitizedName = typeof name === 'string' ? name.slice(0, 80) : '';
   const sanitizedPhone = typeof phone === 'string' ? phone.slice(0, 40) : '';
+  const sanitizedEmail = typeof email === 'string' ? email.trim().slice(0, 100) : '';
   const vehicleInfo = vehicleType ? String(vehicleType).charAt(0).toUpperCase() + String(vehicleType).slice(1) : 'Not specified';
 
   const bookings = readBookings();
@@ -449,19 +562,25 @@ app.post('/api/book-cash', async (req, res) => {
   });
   writeBookings(bookings);
 
-  // Notify Jason by email
+  // Format date for emails
   const humanDate = new Date(sanitizedDate + 'T12:00:00').toLocaleDateString([], { weekday:'short', month:'short', day:'numeric', timeZone: 'America/Los_Angeles' });
-  await sendEmailNotification({
+  const bookingData = {
     customerName: sanitizedName || 'N/A',
     customerPhone: sanitizedPhone || 'N/A',
-    customerEmail: 'Not provided',
+    customerEmail: sanitizedEmail || 'Not provided',
     selectedDate: humanDate,
     vehicleInfo: vehicleInfo,
     serviceLevel: serviceLevel || 'Not specified',
     depositAmount: 0,
     paymentMethod: 'Cash Reservation',
     stripePaymentId: 'N/A'
-  });
+  };
+
+  // Send admin notification email
+  await sendEmailNotification(bookingData);
+  
+  // Send customer confirmation email
+  await sendCustomerConfirmationEmail(bookingData);
 
   return res.json({ success: true, message: 'Cash reservation saved.', date: sanitizedDate, method: 'cash' });
 });
