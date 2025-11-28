@@ -301,7 +301,8 @@ async function sendCustomerConfirmationEmail(bookingData) {
     console.log('✅ Customer confirmation email sent successfully to:', customerEmail);
     console.log('Email message ID:', info.messageId);
   } catch (err) {
-    console.error('Customer confirmation email error:', err?.message || err);
+    console.error('❌ Customer confirmation email error:', err?.message || err);
+    console.error('Error stack:', err?.stack);
     // Don't block booking - email failure shouldn't prevent booking completion
   }
 }
@@ -313,15 +314,15 @@ async function sendEmailNotification(bookingData) {
   }
   
   try {
-    const { customerName, customerPhone, customerEmail, selectedDate, vehicleInfo, depositAmount, serviceLevel } = bookingData;
+    const { customerName, customerPhone, customerEmail, selectedDate, vehicleInfo, depositAmount, serviceLevel, paymentMethod } = bookingData;
     
     console.log('Sending booking notification email to:', recipientEmails.join(', '));
-    console.log('Customer info:', { name: customerName, phone: customerPhone, date: selectedDate, vehicle: vehicleInfo, service: serviceLevel });
+    console.log('Customer info:', { name: customerName, phone: customerPhone, date: selectedDate, vehicle: vehicleInfo, service: serviceLevel, paymentMethod });
     
     const mailOptions = {
       from: `"Flawless Finish Website" <${process.env.EMAIL_USER}>`,
       to: recipientEmails.join(', '), // Support multiple recipients
-      subject: `New Booking - ${customerName} - ${selectedDate}`,
+      subject: `New ${depositAmount > 0 ? 'Paid' : 'Cash'} Booking - ${customerName} - ${selectedDate}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #FFD700; background: #0a0f1a; padding: 20px; margin: 0; text-align: center;">
@@ -354,16 +355,29 @@ async function sendEmailNotification(bookingData) {
                 <td style="padding: 10px; border-bottom: 1px solid #ddd; font-weight: bold;">Service:</td>
                 <td style="padding: 10px; border-bottom: 1px solid #ddd;">${escapeHtml(serviceLevel || 'Not specified')}</td>
               </tr>
+              ${depositAmount > 0 ? `
               <tr>
                 <td style="padding: 10px; font-weight: bold;">Deposit:</td>
                 <td style="padding: 10px; color: #FFD700; font-weight: bold;">$${(depositAmount / 100).toFixed(2)}</td>
               </tr>
+              ` : ''}
+              <tr>
+                <td style="padding: 10px; font-weight: bold;">Payment Method:</td>
+                <td style="padding: 10px; font-weight: bold;">${escapeHtml(paymentMethod || 'Cash Reservation')}</td>
+              </tr>
             </table>
 
+            ${depositAmount > 0 ? `
             <div style="margin-top: 30px; padding: 20px; background: #e8f5e8; border-left: 4px solid #4CAF50;">
               <h4 style="margin: 0 0 10px 0; color: #2e7d32;">✅ Deposit Received</h4>
-              <p style="margin: 0; color: #2e7d32;">The customer has successfully paid the $250 deposit to secure their booking.</p>
+              <p style="margin: 0; color: #2e7d32;">The customer has successfully paid the $${(depositAmount / 100).toFixed(2)} deposit to secure their booking.</p>
             </div>
+            ` : `
+            <div style="margin-top: 30px; padding: 20px; background: #fff3cd; border-left: 4px solid #ffc107;">
+              <h4 style="margin: 0 0 10px 0; color: #856404;">💰 Cash Reservation</h4>
+              <p style="margin: 0; color: #856404;">This is a cash reservation. No deposit has been paid. Please contact the customer to confirm the appointment.</p>
+            </div>
+            `}
 
             <div style="margin-top: 20px; text-align: center;">
               <a href="tel:${sanitizePhoneForTelLink(customerPhone)}" style="background: #FFD700; color: #0a0f1a; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
@@ -390,10 +404,11 @@ async function sendEmailNotification(bookingData) {
       timeoutPromise
     ]);
     
-    console.log('✅ Email sent successfully to:', recipientEmails.join(', '));
+    console.log('✅ Admin notification email sent successfully to:', recipientEmails.join(', '));
     console.log('Email message ID:', info.messageId);
   } catch (err) {
-    console.error('Email error:', err?.message || err);
+    console.error('❌ Admin notification email error:', err?.message || err);
+    console.error('Error stack:', err?.stack);
     // Don't block booking - email failure shouldn't prevent booking completion
   }
 }
@@ -577,10 +592,21 @@ app.post('/api/book-cash', async (req, res) => {
   };
 
   // Send admin notification email
-  await sendEmailNotification(bookingData);
+  console.log('Attempting to send emails for cash booking...');
+  try {
+    await sendEmailNotification(bookingData);
+    console.log('Admin notification email attempt completed');
+  } catch (emailErr) {
+    console.error('Error sending admin notification email:', emailErr);
+  }
   
   // Send customer confirmation email
-  await sendCustomerConfirmationEmail(bookingData);
+  try {
+    await sendCustomerConfirmationEmail(bookingData);
+    console.log('Customer confirmation email attempt completed');
+  } catch (emailErr) {
+    console.error('Error sending customer confirmation email:', emailErr);
+  }
 
   return res.json({ success: true, message: 'Cash reservation saved.', date: sanitizedDate, method: 'cash' });
 });
