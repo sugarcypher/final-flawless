@@ -130,17 +130,6 @@
             </div>
             <div class="before-after-caption">Headlight Restoration & Ceramic Coating</div>
           </div>
-          <div class="before-after-item">
-            <div class="before-after-image">
-              <img src="images/before-after/before.png" alt="Vehicle before ceramic coating treatment">
-              <div class="before-after-label">Before</div>
-            </div>
-            <div class="before-after-image">
-              <img src="images/before-after/after.png" alt="Vehicle after ceramic coating treatment - flawless finish">
-              <div class="before-after-label">After</div>
-            </div>
-            <div class="before-after-caption">Complete Vehicle Transformation</div>
-          </div>
         </div>
         <div class="before-after-cta">
           <a href="#booking" class="button primary">Transform Your Vehicle</a>
@@ -216,11 +205,10 @@
     <section id="pricing" class="section light pricing-section">
       <div class="container">
         <h2>Transparent Pricing</h2>
-        <p class="sub">Add $100 to each menu item for ceramic coating</p>
         <div class="pricing-grid">
           <div class="pricing-card">
             <h3>Cars</h3>
-            <div class="price">$700</div>
+            <div class="price">$800</div>
             <div class="description">Minimal Paint Correction</div>
             <ul>
               <li>Decontamination wash</li>
@@ -232,7 +220,7 @@
           </div>
           <div class="pricing-card featured">
             <h3>Cars</h3>
-            <div class="price">$800</div>
+            <div class="price">$900</div>
             <div class="description">Moderate Paint Correction</div>
             <ul>
               <li>Full decontamination</li>
@@ -244,7 +232,7 @@
           </div>
           <div class="pricing-card">
             <h3>Cars</h3>
-            <div class="price">$1,000</div>
+            <div class="price">$1,100</div>
             <div class="description">Heavy Paint Correction</div>
             <ul>
               <li>Complete decontamination</li>
@@ -256,7 +244,6 @@
           </div>
         </div>
         <div class="pricing-note">
-          <p><strong>Trucks/SUVs:</strong> Add $100 to each price above</p>
           <p><strong>Glass & Rims:</strong> Add $100-$150 depending on correction level</p>
         </div>
       </div>
@@ -341,15 +328,15 @@
           <h2>Book Your Ceramic Coating</h2>
           <p class="sub">Select your preferred date and complete your booking</p>
           
-          <div class="calendar-container">
-            <h3>Available Dates</h3>
-            <div class="calendar-grid" id="calendar">
-              <!-- Calendar will be populated by JavaScript -->
-            </div>
-            <div id="nextSlot" class="text-center mb-20"></div>
-          </div>
-
           <form class="booking-form" id="bookingForm">
+            <div class="form-group">
+              <label for="bookingDate">Select Your Date</label>
+              <select id="bookingDate" name="bookingDate" required>
+                <option value="">Loading available dates...</option>
+              </select>
+              <div id="nextSlot" class="text-muted" style="margin-top: 8px; font-size: 0.9em;"></div>
+            </div>
+            
             <div class="form-group">
               <label for="customerName">Full Name</label>
               <input type="text" id="customerName" name="customerName" required>
@@ -374,9 +361,9 @@
               <label for="serviceLevel">Service Level</label>
               <select id="serviceLevel" name="serviceLevel" required>
                 <option value="">Select Service Level</option>
-                <option value="minimal">Minimal Paint Correction - $700</option>
-                <option value="moderate">Moderate Paint Correction - $800</option>
-                <option value="heavy">Heavy Paint Correction - $1,000</option>
+                <option value="minimal">Minimal Paint Correction - $800</option>
+                <option value="moderate">Moderate Paint Correction - $900</option>
+                <option value="heavy">Heavy Paint Correction - $1,100</option>
               </select>
             </div>
 
@@ -414,7 +401,7 @@
   <script>
     // Professional booking calendar functionality
     document.addEventListener('DOMContentLoaded', function() {
-      const calendar = document.getElementById('calendar');
+      const bookingDateSelect = document.getElementById('bookingDate');
       const nextSlot = document.getElementById('nextSlot');
       const cashBooking = document.getElementById('cashBooking');
       const cardBooking = document.getElementById('cardBooking');
@@ -422,7 +409,7 @@
       const bookingForm = document.getElementById('bookingForm');
       
       // Check if required elements exist
-      if (!calendar || !cashBooking || !cardBooking || !paymentForm || !bookingForm) {
+      if (!bookingDateSelect || !cashBooking || !cardBooking || !paymentForm || !bookingForm) {
         console.error('Required booking form elements not found');
         return;
       }
@@ -430,58 +417,45 @@
       let selectedDate = null;
       let stripe = null;
       
-      // Load calendar from API
+      // Load available dates into dropdown
       async function loadCalendar() {
         try {
           const response = await fetch('/api/availability?days=30');
           const data = await response.json();
           
-          calendar.innerHTML = '';
+          bookingDateSelect.innerHTML = '<option value="">Select your date</option>';
           let firstAvailable = null;
           
           data.days.forEach(day => {
-            const dayElement = document.createElement('div');
-            dayElement.className = 'calendar-day';
-            dayElement.textContent = day.displayDate;
-            dayElement.setAttribute('data-date', day.date);
-            
-            if (day.booked) {
-              dayElement.classList.add('booked');
-              dayElement.textContent += ' (Booked)';
-            } else {
+            if (!day.booked) {
+              const option = document.createElement('option');
+              option.value = day.date;
+              option.textContent = day.displayDate;
+              bookingDateSelect.appendChild(option);
+              
               if (!firstAvailable) {
                 firstAvailable = day;
               }
-              dayElement.addEventListener('click', function() {
-                selectDate(day.date);
-              });
             }
-            
-            calendar.appendChild(dayElement);
           });
           
           if (firstAvailable) {
             nextSlot.textContent = `Next available: ${firstAvailable.displayDate}`;
           } else {
             nextSlot.textContent = 'No available dates in the next 30 days';
+            bookingDateSelect.innerHTML = '<option value="">No dates available</option>';
           }
         } catch (error) {
           console.error('Error loading calendar:', error);
+          bookingDateSelect.innerHTML = '<option value="">Error loading dates</option>';
           nextSlot.textContent = 'Error loading calendar. Please refresh the page.';
         }
       }
       
-      // Select date function
-      function selectDate(date) {
-        selectedDate = date;
-        document.querySelectorAll('.calendar-day').forEach(day => {
-          day.classList.remove('selected');
-        });
-        const selectedElement = document.querySelector(`[data-date="${date}"]`);
-        if (selectedElement) {
-          selectedElement.classList.add('selected');
-        }
-      }
+      // Handle date selection from dropdown
+      bookingDateSelect.addEventListener('change', function() {
+        selectedDate = this.value || null;
+      });
       
       // Cash booking handler
       cashBooking.addEventListener('click', async function() {
@@ -489,7 +463,7 @@
         
         try {
           const formData = {
-            date: selectedDate,
+            date: bookingDateSelect.value || selectedDate,
             name: document.getElementById('customerName').value,
             phone: document.getElementById('customerPhone').value,
             vehicleType: document.getElementById('vehicleType').value,
@@ -509,9 +483,7 @@
             alert('Cash booking submitted successfully! We will contact you to confirm your appointment.');
             bookingForm.reset();
             selectedDate = null;
-            document.querySelectorAll('.calendar-day').forEach(day => {
-              day.classList.remove('selected');
-            });
+            loadCalendar(); // Reload available dates
           } else {
             alert('Booking failed: ' + (result.message || 'Unknown error'));
           }
@@ -575,7 +547,7 @@
           
           // Create payment intent
           const formData = {
-            date: selectedDate,
+            date: bookingDateSelect.value || selectedDate,
             name: document.getElementById('customerName').value.trim(),
             phone: document.getElementById('customerPhone').value.trim(),
             vehicleType: document.getElementById('vehicleType').value,
@@ -649,9 +621,11 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                       paymentIntentId: paymentIntent.id,
-                      date: formData.date,
+                      date: bookingDateSelect.value || formData.date,
                       name: formData.name,
                       phone: formData.phone,
+                      vehicleType: document.getElementById('vehicleType').value,
+                      serviceLevel: document.getElementById('serviceLevel').value,
                       email: ''
                     })
                   });
@@ -663,10 +637,7 @@
                     bookingForm.reset();
                     paymentForm.style.display = 'none';
                     selectedDate = null;
-                    document.querySelectorAll('.calendar-day').forEach(day => {
-                      day.classList.remove('selected');
-                    });
-                    loadCalendar(); // Reload calendar
+                    loadCalendar(); // Reload available dates
                   } else {
                     alert('Payment succeeded but booking confirmation failed. Please contact us at (442) 342-3627.');
                   }
@@ -728,9 +699,9 @@
           return false;
         }
         
-        if (!selectedDate) {
-          alert('Please select a date for your appointment from the calendar above.');
-          calendar.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        if (!selectedDate || !bookingDateSelect.value) {
+          alert('Please select a date for your appointment.');
+          bookingDateSelect.focus();
           return false;
         }
         
